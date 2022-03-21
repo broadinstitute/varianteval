@@ -1,0 +1,28 @@
+# Continuous integration test of any branch.
+
+name: CI
+on:
+  push:
+    branches-ignore:
+    - main
+
+jobs:
+  # Run test suite
+  test_suite:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: 'actions/checkout@v2'
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.7.9'
+        architecture: 'x64'
+
+    - name: pytest
+      run: |-
+        python3 -mvenv venv
+        . venv/bin/activate
+        pip install --upgrade pip
+        pip3 install -r requirements.txt
+        pip install -e .
+        pytest
