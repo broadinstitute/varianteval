@@ -30,7 +30,7 @@ To install from Github source for development, the following commands can be run
 Getting Started
 ---------------
 
-Don't! This API is currently in pre-pre-alpha form. Unless you're helping to developing this library, don't use it for anything!
+Don't! This API is currently in pre-pre-alpha form. Unless you're helping to develop this library, don't use it for anything!
 
 Getting help
 ------------
