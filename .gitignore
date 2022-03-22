@@ -131,3 +131,4 @@ dmypy.json
 # Misc
 .DS_Store
 scratch/
+.vscode/
