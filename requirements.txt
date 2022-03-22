@@ -1,9 +1,10 @@
-requirements.txtblack
+black
 bumpversion
 click
 click-log
 coverage
 cython
+cyvcf2
 flake8
 matplotlib
 mypy
