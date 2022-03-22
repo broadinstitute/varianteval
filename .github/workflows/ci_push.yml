@@ -10,12 +10,17 @@ jobs:
   # Run test suite
   test_suite:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-verison: ['3.6', '3.7', '3.8', '3.9']
 
+    name: Python ${{ matrix.python-version }} test
     steps:
     - uses: 'actions/checkout@v2'
+
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.7.9'
+        python-version: ${{ matrix.python-version }}
         architecture: 'x64'
 
     - name: pytest
