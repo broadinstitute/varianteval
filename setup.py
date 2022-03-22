@@ -27,8 +27,8 @@ setup(
     ],
     tests_require=["coverage", "pytest"],
     python_requires=">=3.6",
-    packages=find_packages("src"),
-    package_dir={"": "src"},
+    packages=find_packages("varianteval"),
+    package_dir={"": "varianteval"},
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
