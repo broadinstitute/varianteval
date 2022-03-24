@@ -1,6 +1,6 @@
 from collections import defaultdict
 from intervaltree import IntervalTree
-from core.utils import chr2num
+from varianteval.core.utils import chr2num
 
 class GenomeInterval(tuple):
     """

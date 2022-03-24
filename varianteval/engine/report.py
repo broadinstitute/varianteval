@@ -1,8 +1,6 @@
-import engine.config_utils as config_utils
+import varianteval.engine.config_utils as config_utils
 import argparse
-import logging
-import os
-from core.io import vcf
+from varianteval.core.io import vcf
 
 # ------ CLI ------
 parser = argparse.ArgumentParser(description='Generate an SV callset report')

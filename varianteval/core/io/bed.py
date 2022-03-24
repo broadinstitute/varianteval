@@ -1,8 +1,7 @@
 import functools
-from collections import defaultdict
 import bisect
-from core.constants import *
-from core.variant.intervals import GenomeInterval
+from varianteval.core.constants import *
+from varianteval.core.variant.intervals import GenomeInterval
 
 class BedRecord:
     def __init__(self, interval_a, interval_b=None, sv_type=None, qual=None, gt=None):

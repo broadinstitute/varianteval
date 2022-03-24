@@ -1,7 +1,6 @@
-import pysam
 from pysam import VariantFile
-from core.constants import *
-from core.variant.sv import *
+from varianteval.core.constants import *
+from varianteval.core.variant.sv import *
 
 # --- VCF field accessors and iteration utils for the pysam VCF library ---
 def get_sv_type(pysam_vcf_record):

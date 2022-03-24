@@ -1,7 +1,7 @@
 from intervaltree import IntervalTree, Interval
-from core.utils import NestedDict
-import core.constants as constants
-from core.io.repeat_tracks import repeat_track_iter
+from varianteval.core.utils import NestedDict
+import varianteval.core.constants as constants
+from varianteval.core.io.repeat_tracks import repeat_track_iter
 
 class GenomeContext:
     """
