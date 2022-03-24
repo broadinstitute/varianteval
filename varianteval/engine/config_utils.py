@@ -3,9 +3,7 @@ from enum import Enum
 from pathlib import Path
 import logging
 import sys
-import os
 logging.getLogger('matplotlib').setLevel(logging.ERROR)
-logging.getLogger('tensorflow').setLevel(logging.WARNING)
 
 CONFIG_TYPE = Enum("CONFIG_TYPE", 'REPORT BENCH COMPARE')
 

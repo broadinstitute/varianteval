@@ -19,6 +19,8 @@ def chr2num(chr_name):
         return 23
     elif chr_id == 'Y':
         return 24
+    elif chr_id == 'M':
+        return 25
     return int(chr_id)
 
 def seq_to_num(seq):
