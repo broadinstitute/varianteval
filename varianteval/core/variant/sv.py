@@ -16,8 +16,8 @@ class SVCallset:
         pass
 
 class SV:
-    def __init__(self):
-        pass
+    def __init__(self, sv_type):
+        self.sv_type = sv_type
 
     def __str__(self):
         pass
