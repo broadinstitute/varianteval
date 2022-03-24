@@ -10,7 +10,7 @@ class GenomeContext:
     """
     def __init__(self, reference_genome):
         self.reference_genome = reference_genome
-        self.tracks = NestedDict(NestedDict(NestedDict(IntervalTree)))
+        self.tracks = NestedDict(NestedDict(IntervalTree))
 
     def load_track(self, repeat_track_fname, track_type):
         if isinstance(track_type, constants.REPEAT_TYPE):
