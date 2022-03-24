@@ -3,6 +3,10 @@ from collections import namedtuple
 Chr = namedtuple('Chr', 'name len')
 
 class ChrFAIndex:
+    """
+    Index of chromosome sequences in a FASTA file constructed from a .fai file
+    Supports lookups of chromosome info (names and lengths) by index and name
+    """
     def __init__(self):
         self.tid2chr = {}
         self.chr2tid = {}
@@ -34,12 +38,14 @@ class ChrFAIndex:
 
 
 def load_faidx(fai_fname, primary=False):
+    """
+    Loads the .fai file into a ChrFAIndex
+    """
     chr_index = ChrFAIndex()
     with open(fai_fname, "r") as faidx:
         for tid, line in enumerate(faidx):
             if primary and tid > 23:
                 break  # only keep the autosomes
-            # TODO: tid + 1 to correspond to chr names
             name, length, _, _, _ = line[:-1].split()
             chr_index.add(tid+1, Chr(name, int(length)))
     return chr_index
