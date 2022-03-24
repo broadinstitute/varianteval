@@ -1,7 +1,7 @@
 # varianteval
 API to compare variant calls in VCF files.
 
-Current version: 0.0.9
+Current version: 0.0.10
 
 ## Development
 
