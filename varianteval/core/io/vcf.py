@@ -52,6 +52,7 @@ def vcf2callset(vcf_fname, filter_funcs=None):
             # TODO: handle multi-line events
             callset.add(record2sv(rec))
     # TODO: consolidate multi-line calls
+    return callset
 
 def svs2vcf(vcf_fname, sv_callset):
     """Outputs a VCF given an SV callset"""
