@@ -11,9 +11,144 @@ unstructured strings or to external files.
 """
 
 import math
+import pickle
+import pysam
+
 import varianteval.core.constants as constants
 import varianteval.core.variant.intervals as intervals
+import varianteval.core.utils as utils
 
+
+# All distinct objects of a given type. The same object might be pointed to by
+# several other objects.
+events: set[Event]
+reference_intervals: set[Reference_Interval]
+adjacencies: set[Adjacency]
+breakpoints: set[Breakpoint]
+sequences: set[Sequence]
+
+
+def serialize(output_file: str):
+    """
+    All core data structures. ``pickle`` ensures that the same object is stored
+    only once when it is pointed to by several other objects.
+    """
+    pickler = pickle.Pickler(output_file,pickle.HIGHEST_PROTOCOL)
+    pickler.dump(events)
+    pickler.dump(reference_intervals)
+    pickler.dump(adjacencies)
+    pickler.dump(breakpoints)
+    pickler.dump(sequences)
+
+
+def deserialize(input_file: str):
+    """
+    All core data structures
+    """
+    unpickler = pickle.Unpickler(input_file)
+    unpickler.load(events)
+    unpickler.load(reference_intervals)
+    unpickler.load(adjacencies)
+    unpickler.load(breakpoints)
+    unpickler.load(sequences)
+
+
+def new_precise_beakpoint(sequence: Sequence, position: int, side: int) -> Breakpoint:
+    """ Builds a breakpoint with no uncertainty """
+    
+    out = Breakpoint()
+    out.sequence = sequence
+    out.side = side
+    out.position_first = position
+    out.position_last = position
+    out.position_avg = position
+    out.position_std = 0
+    out.position_probability_function = constants.PROBABILITY_FUNCTION.DELTA
+    return out
+
+
+def new_uniform_breakpoint(sequence: Sequence, position_first: int, position_last: int, side: int) -> Breakpoint:
+    """ Builds a breakpoint with uniform uncertainty """
+    
+    out = Breakpoint()
+    out.sequence = sequence
+    out.side = side
+    out.position_first = position_first
+    out.position_last = position_last
+    out.position_avg = (position_last+position_first)//2;
+    out.position_std = math.sqrt(float((position_last-position_first+1)**2)/12)
+    out.position_probability_function = constants.PROBABILITY_FUNCTION.UNIFORM
+    return out
+
+
+def new_precise_sequence(name: str, is_circular: bool, length: int, sequence: str) -> Sequence:
+    """
+    Builds a sequence with no length uncertainty.
+    
+    :param sequence: can be None.
+    """
+    
+    out = Sequence()
+    out.name = name
+    out.is_circular = is_circular
+    out.sequence = sequence
+    out.length_min = length
+    out.length_max = length
+    out.length_avg = length
+    out.length_std = 0
+    out.length_probability_function = constants.PROBABILITY_FUNCTION.DELTA
+    return out
+
+   
+def new_uniform_sequence(name: str, is_circular: bool, length_min: int, length_max: int, sequence: str) -> Sequence:
+    """
+    Builds a sequence with uniform length uncertainty.
+    
+    :param sequence: can be None.
+    """
+    
+    out = Sequence()
+    out.name = name
+    out.is_circular = is_circular
+    out.sequence = sequence
+    out.length_first = length_min
+    out.length_max = length_max
+    out.length_avg = (length_max+length_min)//2;
+    out.length_std = math.sqrt(float((length_max-length_min+1)**2)/12)
+    out.length_probability_function = constants.PROBABILITY_FUNCTION.UNIFORM
+    return out
+
+
+def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, min_intersection: int):
+    """
+    If the uncertainty interval ``A`` of a breakpoint overlaps with an interval 
+    ``B`` in ``track`` by ``>=min_intersection`` bps, then ``A`` is reset to 
+    ``A \union B``.
+    
+    :param breakpoints: assumed to be sorted by ``position_first``;
+    :param track: procedure ``merge_intervals()`` is assumed to have already
+         been executed.
+    """
+    if (breakpoints is None) or len(breakpoints) == 0 or (track is None) or len(track) == 0: return
+    i = 0; j = 0
+    n_breakpoints = len(breakpoints)
+    n_tracks = len(tracks)
+    while i<n_breakpoints and j<n_tracks:
+        if breakpoints[i].position_last < track[j][1]+min_intersection-1:
+            i += 1
+            continue
+        if breakpoints[i].position_first > track[j][2]-min_intersection+1:
+            j += 1
+            continue
+        breakpoints[i].position_first = min(breakpoints[i].position_first,track[j][1])
+        breakpoints[i].position_last = max(breakpoints[i].position_last,track[j][2])
+        breakpoints[i].update_position()
+        i += 1
+    
+
+
+
+# ----------------------------- DATA STRUCTURES --------------------------------
 
 class Event:
     """
@@ -49,11 +184,22 @@ class Event:
     # 
     # Remark: the reference is assumed not to contain the event.
     genotype: list[int]
-
+    
+    
+    def __eq__(self, other):
+        if isinstance(other,Event):
+            return self.event_type == other.event_type and \
+                   self.adjacencies == other.adjacencies and \
+                   self.reference_intervals == other.reference_intervals
+        return False
+    
+    
+    def __hash__(self):
+        return hash(self.event_type) ^ hash(self.adjacencies) ^ hash(self.reference_intervals)
+    
     
     def __str__(self):
         return ("Type: %d \n" % (self.event_type)), "Adjacencies: \n", ('\n'.join([str(i) for i in self.adjacencies])), "Intervals: \n", ('\n'.join([str(i) for i in self.reference_intervals])), "Genotype: ", (" ".join([str(i) for i in self.genotype]))
-
 
 
 
@@ -91,9 +237,18 @@ class Adjacency:
         self.position2 = position2
     
     
+    def __eq__(self, other):
+        if isinstance(other,Adjacency):
+            return self.position1 == other.position1 and self.position2 == other.position2
+        return False
+    
+    
+    def __hash__(self):
+        return hash(self.position1) ^ hash(self.position2)
+    
+    
     def __str__(self):
         return str(self.position1), " -- ", str(self.position2), "\n", "Genotype: ", (" ".join([str(i) for i in self.genotype]))
-
 
 
 
@@ -125,9 +280,19 @@ class Reference_Interval:
         self.copy_number = copy_number
     
     
+    def __eq__(self, other):
+        if isinstance(other,Reference_Interval):
+            return self.first_position == other.first_position and \
+                   self.last_position == other.last_position
+        return False
+    
+    
+    def __hash__(self):
+        return hash(self.first_position) ^ hash(self.last_position)
+    
+    
     def __str__(self):
         return "From: ", str(self.first_position), "\n To: ", str(self.last_position), "\n", ("Copy number: %f \n" % self.copy_number), "Genotype: ", (" ".join([str(i) for i in self.genotype]))
-
 
 
 
@@ -170,6 +335,22 @@ class Breakpoint:
     genotype: list[int]
 
     
+    def __eq__(self, other):
+        if isinstance(other,Breakpoint):
+            return self.sequence == other.sequence and \
+                   self.side == other.side and \
+                   self.position_first == other.position_first and \
+                   self.position_last == other.position_last and \
+                   self.position_avg == other.position_avg and \
+                   self.position_std == other.position_std and \
+                   self.position_probability_function == other.position_probability_function
+        return False
+    
+    
+    def __hash__(self):
+        return hash(self.sequence) ^ hash(self.side) ^ hash(self.position_first) ^ hash(self.position_last) ^ hash(self.position_avg) ^ hash(self.position_std) ^ hash(self.position_probability_function)
+    
+    
     def __str__(self):
         if self.side == constants.BREAKPOINT_SIDE.LEFT:
             left = "<"
@@ -211,37 +392,6 @@ class Breakpoint:
             position_std = math.sqrt(float((position_last-position_first+1)**2)/12)
         else:
             pass  # We keep the STD of the original function
-    
-    
-    @staticmethod
-    def new_precise_beakpoint(sequence: Sequence, position: int, side: int) -> Breakpoint:
-        """ Builds a breakpoint with no uncertainty """
-        
-        out = Breakpoint()
-        out.sequence = sequence
-        out.side = side
-        out.position_first = position
-        out.position_last = position
-        out.position_avg = position
-        out.position_std = 0
-        out.position_probability_function = constants.PROBABILITY_FUNCTION.DELTA
-        return out
-
-
-    @staticmethod
-    def new_uniform_breakpoint(sequence: Sequence, position_first: int, position_last: int, side: int) -> Breakpoint:
-        """ Builds a breakpoint with uniform uncertainty """
-        
-        out = Breakpoint()
-        out.sequence = sequence
-        out.side = side
-        out.position_first = position_first
-        out.position_last = position_last
-        out.position_avg = (position_last+position_first)//2;
-        out.position_std = math.sqrt(float((position_last-position_first+1)**2)/12)
-        out.position_probability_function = constants.PROBABILITY_FUNCTION.UNIFORM
-        return out
-
 
 
 
@@ -253,7 +403,7 @@ class Sequence:
     """
     
     # General properties
-    name: str
+    name: str  # Can be None if it is not a known sequence.
     is_circular: bool
     sequence: str  # The actual nucleotides. Can be None if not needed.
     tracks: list[Track]
@@ -266,49 +416,36 @@ class Sequence:
     length_probability_function: int  # ID of a function
     
     
-    def __str__(self):
-        return ("%s(%s) %s[%d..(%d,%f)..%d]\n" % (self.name, self.is_circular, self.length_probability_function, self.length_min, self.length_avg, self.length_std, self.length_max)), "Tracks: \n", ("\n".join([str(i) for i in self.tracks]))
+    def __eq__(self, other):
+        if isinstance(other,Sequence):
+            return self.name == other.name and \
+                   self.is_circular == other.is_circular and \
+                   self.length_min == other.length_min and \
+                   self.length_max == other.length_max and \
+                   self.length_avg == other.length_avg and \
+                   self.length_std == other.length_std and \
+                   self.length_probability_function == other.length_probability_function and \
+                   self.sequence == other.sequence
+        return False
+    
+    
+    def __hash__(self):        
+        return hash(self.name) ^ hash(self.is_circular) ^ hash(sequence) ^ hash(self.length_min) ^ hash(self.length_max) ^ hash(self.length_avg) ^ hash(self.length_std) ^ hash(self.length_probability_function)
         
     
-    @staticmethod
-    def new_precise_sequence(name: str, is_circular: bool, length: int, sequence: str) -> Sequence:
+    def __str__(self):
+        return ("%s(%s) %s[%d..(%d,%f)..%d]\n" % (self.name, self.is_circular, self.length_probability_function, self.length_min, self.length_avg, self.length_std, self.length_max)), "Tracks: \n", ("\n".join([str(i) for i in self.tracks]))
+    
+    
+    def get_type() -> int:
         """
-        Builds a sequence with no length uncertainty.
-        
-        :param sequence: can be None.
+        :return: 0=chromosome, 1=contig, 2=inserted string.
         """
-        
-        out = Sequence()
-        out.name = name
-        out.is_circular = is_circular
-        out.sequence = sequence
-        out.length_min = length
-        out.length_max = length
-        out.length_avg = length
-        out.length_std = 0
-        out.length_probability_function = constants.PROBABILITY_FUNCTION.DELTA
-        return out
-
-       
-    @staticmethod
-    def new_uniform_sequence(name: str, is_circular: bool, length_min: int, length_max: int, sequence: str) -> Sequence:
-        """
-        Builds a sequence with uniform length uncertainty.
-        
-        :param sequence: can be None.
-        """
-        
-        out = Sequence()
-        out.name = name
-        out.is_circular = is_circular
-        out.sequence = sequence
-        out.length_first = length_min
-        out.length_max = length_max
-        out.length_avg = (length_max+length_min)//2;
-        out.length_std = math.sqrt(float((length_max-length_min+1)**2)/12)
-        out.length_probability_function = constants.PROBABILITY_FUNCTION.UNIFORM
-        return out
-
+        if util.is_chromosome(name):
+            return 0
+        else if name == constants.VCF_INSERTION_STRING_NAME:
+            return 2
+        return 1
 
 
 
@@ -319,6 +456,16 @@ class Track:
     
     # List of ``[first..last]`` coordinates, inclusive, zero-based.
     intervals: list[intervals.GenomeInterval]
+    
+    
+    def __eq__(self, other):
+        if isinstance(other,Track):
+            return self.name == other.name and self.intervals == other.intervals
+        return False
+    
+    
+    def __hash__(self):
+        return hash(self.name) ^ hash(tuple(self.intervals))
     
     
     def __str__(self):
@@ -338,33 +485,3 @@ class Track:
             else:
                 intervals[j].end = max(intervals[j].end,intervals[i].end)
         del intervals[j+1:]
-
-
-
-
-def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, min_intersection: int):
-    """
-    If the uncertainty interval ``A`` of a breakpoint overlaps with an interval 
-    ``B`` in ``track`` by ``>=min_intersection`` bps, then ``A`` is reset to 
-    ``A \union B``.
-    
-    :param breakpoints: assumed to be sorted by ``position_first``;
-    :param track: procedure ``merge_intervals()`` is assumed to have already
-         been executed.
-    """
-    if (breakpoints is None) or len(breakpoints) == 0 or (track is None) or len(track) == 0: return
-    i = 0; j = 0
-    n_breakpoints = len(breakpoints)
-    n_tracks = len(tracks)
-    while i<n_breakpoints and j<n_tracks:
-        if breakpoints[i].position_last < track[j][1]+min_intersection-1:
-            i += 1
-            continue
-        if breakpoints[i].position_first > track[j][2]-min_intersection+1:
-            j += 1
-            continue
-        breakpoints[i].position_first = min(breakpoints[i].position_first,track[j][1])
-        breakpoints[i].position_last = max(breakpoints[i].position_last,track[j][2])
-        breakpoints[i].update_position()
-        i += 1
-    

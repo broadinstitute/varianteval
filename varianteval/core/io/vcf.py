@@ -59,3 +59,17 @@ def svs2vcf(vcf_fname, sv_callset):
 
 def preprocess_vcf(vcf_fname):
     pass
+
+
+
+
+
+
+
+---------------->
+def build_callset_dict(callset_vcf, trg_supp_vec=None):
+    record_dict = defaultdict(list)
+    callset = VariantFile(callset_vcf)
+    for rec in callset.fetch():
+        record_dict[rec.chrom].append(((rec.start, rec.stop), rec.info['SVTYPE'], rec.info['SUPP_VEC'] if 'SUPP_VEC' in rec.info else 'NA'))
+    return record_dict

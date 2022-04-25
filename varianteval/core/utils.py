@@ -19,7 +19,7 @@ def chr2num(chr_name):
         return 23
     elif chr_id == 'Y':
         return 24
-    elif chr_id == 'M':
+    elif chr_id == 'M' or chr_id == 'MT':
         return 25
     return int(chr_id)
 
@@ -32,3 +32,15 @@ def seq_to_num(seq):
 def shuffle_and_split(records, n_chunks):
     random.shuffle(records)
     return np.array_split(np.array(records), n_chunks)
+
+
+def is_chromosome(string: str) -> bool:
+    lower=string.lower()
+    if lower[0].isdigit() or \
+       lower == 'x' or lower == 'chrx' or \
+       lower == 'y' or lower == 'chry' or \
+       lower == 'm' or lower == 'chrm' or lower == 'mt' or lower == 'chrmt' or \
+       (lower[0:3] == 'chr' and len(lower) <= 5):
+       return True
+     return False
+
