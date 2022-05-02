@@ -59,11 +59,11 @@ def load_vcf(path: str, record_filter: Callable[[VariantRecord],bool], contig_le
     for record in vcf_file.fetch():
         if not record_filter(record): continue
         sv_type = vcf.get_sv_type(record)
-        if sv_type == SV_TYPE.DEL or sv_type == SV_TYPE.DEL_ME: 
+        if sv_type in [SV_TYPE.DEL, SV_TYPE.DEL_ME]: 
             load_event_del(record,contig_lengths,tmp_event,tmp_adjacency,tmp_breakpoint,tmp_sequence)
-        elif sv_type == SV_TYPE.INS or sv_type == SV_TYPE.INS_ME or sv_type == SV_TYPE.INS_NOVEL: 
+        elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]: 
             load_event_ins(record,contig_lengths,tmp_event,tmp_adjacency,tmp_breakpoint,tmp_sequence)
-        elif sv_type == SV_TYPE.DUP or sv_type == SV_TYPE.DUP_TANDEM: 
+        elif sv_type in [SV_TYPE.DUP, SV_TYPE.DUP_TANDEM]:
             load_event_dup(record,contig_lengths,tmp_event,tmp_adjacency,tmp_breakpoint,tmp_sequence)
         elif sv_type == SV_TYPE.DUP_INT:
             # Warning: don't know how to load sparse dup records yet.
@@ -106,17 +106,17 @@ def load_event_del(record: VariantRecord, contig_lengths: dict[str,int], tmp_eve
     tmp_event.event_type = SV_TYPE.DEL
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence = retrieve_sequence(tmp_sequence)
+    sequence = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    tmp_adjacency.breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    retrieve_event(tmp_event)
+    tmp_adjacency.breakpoint2 = retrieve(tmp_breakpoint,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_ins(record: VariantRecord, contig_lengths: dict[str,int], tmp_event: Event, tmp_adjacency: Adjacency, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -128,30 +128,30 @@ def load_event_ins(record: VariantRecord, contig_lengths: dict[str,int], tmp_eve
     tmp_event.event_type = SV_TYPE.INS
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence1 = retrieve_sequence(tmp_sequence)
+    sequence1 = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence1
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence1
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    breakpoint4 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint4 = retrieve_instance(tmp_breakpoint,breakpoints)
     
     load_sequence(record,False,contig_lengths,tmp_sequence)    
-    sequence2 = retrieve_sequence(tmp_sequence)
+    sequence2 = retrieve_instance(tmp_sequence,sequences)
     set_precise_beakpoint(tmp_breakpoint,sequence2,0,BREAKPOINT_SIDE.LEFT)
-    breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
     set_precise_beakpoint(tmp_breakpoint,sequence2,sequence2.length-1,BREAKPOINT_SIDE.RIGHT)
-    breakpoint3 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint3 = retrieve_instance(tmp_breakpoint,breakpoints)
     
     tmp_adjacency.breakpoint1 = breakpoint1
     tmp_adjacency.breakpoint2 = breakpoint2
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
     tmp_adjacency.breakpoint1 = breakpoint3
     tmp_adjacency.breakpoint2 = breakpoint4
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    retrieve_event(tmp_event)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_dup(record: VariantRecord, contig_lengths: dict[str,int], tmp_event: Event, tmp_adjacency: Adjacency, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -167,17 +167,17 @@ def load_event_dup(record: VariantRecord, contig_lengths: dict[str,int], tmp_eve
     tmp_event.event_type = SV_TYPE.INS
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence = retrieve_sequence(tmp_sequence)
+    sequence = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    tmp_adjacency.breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    retrieve_event(tmp_event)
+    tmp_adjacency.breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_cnv(record: VariantRecord, contig_lengths: dict[str,int], tmp_event: Event, tmp_interval: Reference_Interval, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -195,18 +195,18 @@ def load_event_cnv(record: VariantRecord, contig_lengths: dict[str,int], tmp_eve
     tmp_event.event_type = SV_TYPE.CNV
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence = retrieve_sequence(tmp_sequence)
+    sequence = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    tmp_interval.breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    tmp_interval.breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
     tmp_breakpoint.copy_number = 0.0
-    tmp_interval.breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
-    tmp_event.reference_intervals.append(retrieve_reference_interval(tmp_interval))
-    retrieve_event(tmp_event)
+    tmp_interval.breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
+    tmp_event.reference_intervals.append(retrieve_instance(tmp_interval,intervals))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_inv(record: VariantRecord, contig_lengths: dict[str,int], tmp_event: Event, tmp_adjacency: Adjacency, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -218,29 +218,29 @@ def load_event_inv(record: VariantRecord, contig_lengths: dict[str,int], tmp_eve
     tmp_event.event_type = SV_TYPE.INV
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence = retrieve_sequence(tmp_sequence)
+    sequence = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
     tmp_breakpoint.move_left(1)
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    breakpoint3 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint3 = retrieve_instance(tmp_breakpoint,breakpoints)
     tmp_breakpoint.move_right(1)
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    breakpoint4 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint4 = retrieve_instance(tmp_breakpoint,breakpoints)
 
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(breakpoint1)
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(breakpoint3)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(breakpoint2)
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(breakpoint4)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    retrieve_event(tmp_event)
+    tmp_adjacency.breakpoint1 = retrieve_instance(breakpoint1,breakpoints)
+    tmp_adjacency.breakpoint2 = retrieve_instance(breakpoint3,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    tmp_adjacency.breakpoint1 = retrieve_instance(breakpoint2,breakpoints)
+    tmp_adjacency.breakpoint2 = retrieve_instance(breakpoint4,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_invdup(record: VariantRecord, contig_lengths: dict[str,int], tmp_event: Event, tmp_adjacency: Adjacency, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -261,26 +261,26 @@ def load_event_invdup(record: VariantRecord, contig_lengths: dict[str,int], tmp_
     tmp_event.event_type = SV_TYPE.INVDUP
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence = retrieve_sequence(tmp_sequence)
+    sequence = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
-    breakpoint3 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint3 = retrieve_instance(tmp_breakpoint,breakpoints)
     tmp_breakpoint.move_right(1)
     tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
-    breakpoint4 = retrieve_breakpoint(tmp_breakpoint)
+    breakpoint4 = retrieve_instance(tmp_breakpoint,breakpoints)
 
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(breakpoint3)
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(breakpoint3)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(breakpoint2)
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(breakpoint4)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
-    retrieve_event(tmp_event)
+    tmp_adjacency.breakpoint1 = retrieve_instance(breakpoint3,breakpoints)
+    tmp_adjacency.breakpoint2 = retrieve_instance(breakpoint3,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    tmp_adjacency.breakpoint1 = retrieve_instance(breakpoint2,breakpoints)
+    tmp_adjacency.breakpoint2 = retrieve_instance(breakpoint4,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
+    retrieve_instance(tmp_event,events)
 
 
 def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str,int], tmp_event: Event, tmp_adjacency: Adjacency, tmp_breakpoint: Breakpoint, tmp_sequence: Sequence):
@@ -297,7 +297,7 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
     tmp_event.event_type = SV_TYPE.INVDUP
     
     load_sequence(record,True,contig_lengths,tmp_sequence)
-    sequence1 = retrieve_sequence(tmp_sequence)
+    sequence1 = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence1
     if is_tra:
@@ -309,9 +309,9 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
     else:
         alt_field = record.alts[0]
         tmp_breakpoint.side = vcf.get_breakend_chromosome_side(alt_field,True)
-    tmp_adjacency.breakpoint1 = retrieve_breakpoint(tmp_breakpoint)
+    tmp_adjacency.breakpoint1 = retrieve_instance(tmp_breakpoint,breakpoints)
     load_sequence(record,False,contig_lengths,tmp_sequence)    
-    sequence2 = retrieve_sequence(tmp_sequence)
+    sequence2 = retrieve_instance(tmp_sequence,sequences)
     load_breakpoint(record,False,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence2
     if is_tra:
@@ -322,103 +322,36 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
     else:
         alt_field = record.alts[0]
         tmp_breakpoint.side = vcf.get_breakend_chromosome_side(alt_field,False)
-    tmp_adjacency.breakpoint2 = retrieve_breakpoint(tmp_breakpoint)
-    tmp_event.adjacencies.append(retrieve_adjacency(tmp_adjacency))
+    tmp_adjacency.breakpoint2 = retrieve_instance(tmp_breakpoint,breakpoints)
+    tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
 
 
-def retrieve_event(event: Event) -> Event:
+def retrieve_instance(query, dictionary):
     """
-    If ``events`` contains an object that is equivalent to ``event``, the 
+    If ``dictionary`` contains an object that is equivalent to ``query``, the 
     procedure returns that object. Otherwise, it creates a shallow copy of 
-    ``event`` and adds it to ``events``.
+    ``query`` and adds it to ``dictionary``.
     
-    :return: the object in ``events`` that is equivalent to ``event``.
+    Remark: this procedure is designed to work on different types.
+    
+    :return: the object in ``dictionary`` that is equivalent to ``query``.
     """
-    event.canonize()
+    i: int
+    key: int
+    
+    if isinstance(query,Event) or isinstance(query,Reference_Interval) or isinstance(query,Adjacency): query.canonize()
     out = None
-    key = hash(event)
-    if key in events.keys():
-        i = events[key].find(event)
+    key = hash(query)
+    if key in dictionary.keys():
+        i = dictionary[key].index(query)
         if i >= 0:
-            out = events[key][i]
-        else
-            out = copy.copy(event)
-            events[key].append(out)
-    else
-        out = copy.copy(event)
+            out = dictionary[key][i]
+        else:
+            out = copy.copy(query)
+            dictionary[key].append(out)
+    else:
+        out = copy.copy(query)
         events[key] = [out]
-    return out
-
-
-def retrieve_reference_interval(interval: Reference_Interval) -> Reference_Interval:
-    """
-    If ``reference_intervals`` contains an object that is equivalent to 
-    ``interval``, the procedure returns that object. Otherwise, it creates a 
-    shallow copy of ``interval`` and adds it to ``reference_intervals``.
-    
-    :return: the object in ``reference_intervals`` that is equivalent to 
-    ``interval``.
-    """
-    interval.canonize()
-    out = None
-    key = hash(interval)
-    if key in reference_intervals.keys():
-        i = reference_intervals[key].find(interval)
-        if i >= 0:
-            out = reference_intervals[key][i]
-        else
-            out = copy.copy(interval)
-            reference_intervals[key].append(out)
-    else
-        out = copy.copy(interval)
-        reference_intervals[key] = [out]
-    return out
-
-
-def retrieve_adjacency(adjacency: Adjacency) -> Adjacency:
-    """
-    If ``adjacencies`` contains an object that is equivalent to ``adjacency``,
-    the procedure returns that object. Otherwise, it creates a shallow copy of 
-    ``adjacency`` and adds it to ``adjacencies``.
-    
-    :return: the object in ``adjacencies`` that is equivalent to ``adjacency``.
-    """
-    adjacency.canonize()
-    out = None
-    key = hash(adjacency)
-    if key in adjacencies.keys():
-        i = adjacencies[key].find(adjacency)
-        if i >= 0:
-            out = adjacencies[key][i]
-        else
-            out = copy.copy(adjacency)
-            adjacencies[key].append(out)
-    else
-        out = copy.copy(adjacency)
-        adjacencies[key] = [out]
-    return out
-
-
-def retrieve_breakpoint(breakpoint: Breakpoint) -> Breakpoint:
-    """
-    If ``breakpoints`` contains an object that is equivalent to ``breakpoint``,
-    the procedure returns that object. Otherwise, it creates a shallow copy of 
-    ``breakpoint`` and adds it to ``breakpoints``.
-    
-    :return: the object in ``breakpoints`` that is equivalent to ``breakpoint``.
-    """
-    out = None
-    key = hash(breakpoint)
-    if key in breakpoints.keys():
-        i = breakpoints[key].find(breakpoint)
-        if i >= 0:
-            out = breakpoints[key][i]
-        else
-            out = copy.copy(breakpoint)
-            breakpoints[key].append(out)
-    else
-        out = copy.copy(breakpoint)
-        breakpoints[key] = [out]
     return out
 
 
@@ -430,9 +363,10 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
     Remark: the procedure does not set the following fields of the breakpoint,
     which are left to the caller to complete: ``sequence, side, genotype``.
     """
-    SIGMA_MULTIPLE = 3  # Arbitrary
+    SIGMA_MULTIPLE: int = 3  # Arbitrary
     
-    length, position: int
+    length: int
+    position: int
     interval: tuple[int, int]
     
     breakpoint.clear()
@@ -455,7 +389,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
         # Remark: VCF's pos is one-based, but it actually refers to the position
         # before the variant.
         position = int(record.pos)
-        if sv_type == SV_TYPE.DEL or sv_type == SV_TYPE.DEL_ME:
+        if sv_type in [SV_TYPE.DEL, SV_TYPE.DEL_ME]:
             length = int(record.info.get(VCF_SVLEN_STR))
             if length < 0: length = -length
             breakpoint.position_avg = position + length - 1
@@ -469,7 +403,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.DELTA
             else:
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.UNIFORM
-        elif sv_type == SV_TYPE.INS or sv_type == SV_TYPE.INS_ME or sv_type == SV_TYPE.INS_NOVEL:
+        elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]:
             breakpoint.position_avg = int(record.pos) + 1
             interval = vcf.get_confidence_interval(record,True,SIGMA_MULTIPLE)
             breakpoint.position_first = breakpoint.position_avg + interval[0]
@@ -481,9 +415,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.DELTA
             else:
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.UNIFORM
-        elif sv_type == SV_TYPE.DUP or sv_type == SV_TYPE.DUP_TANDEM or \
-             sv_type == SV_TYPE.INV or sv_type == SV_TYPE.CNV or \
-             sv_type == SV_TYPE.INV_DUP or sv_type == SV_TYPE.DEL_INV:
+        elif sv_type in [SV_TYPE.DUP, SV_TYPE.DUP_TANDEM, SV_TYPE.INV, SV_TYPE.CNV, SV_TYPE.INV_DUP, SV_TYPE.DEL_INV]:
             # Remark: VCF's end position is one-based.
             breakpoint.position_avg = int(record.info.get(VCF_END_STR)) - 1
             interval = vcf.get_confidence_interval(record,False,SIGMA_MULTIPLE)
@@ -509,29 +441,6 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
             set_precise_beakpoint(breakpoint,None,position,-1)
 
 
-def retrieve_sequence(sequence: Sequence) -> Sequence:
-    """
-    If global dictionary ``sequences`` contains an object that is equivalent to 
-    ``sequence``, the procedure returns that object. Otherwise, it creates a 
-    shallow copy of ``sequence`` and adds it to ``sequences``.
-    
-    :return: the object in ``sequences`` that is equivalent to ``sequence``.
-    """
-    out = None
-    key = hash(sequence)
-    if key in sequences.keys():
-        i = sequences[key].find(sequence)
-        if i >= 0:
-            out = sequences[key][i]
-        else
-            out = copy.copy(sequence)
-            sequences[key].append(out)
-    else
-        out = copy.copy(sequence)
-        sequences[key] = [out]
-    return out
-
-
 def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths: dict[str,int], sequence: Sequence):
     """
     Loads in global dictionary ``sequence`` the information about the sequence 
@@ -541,11 +450,16 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
     :param contig_lengths: keys are assumed to contain every contig name used in
     ``record`` (lowercase).
     """
-    IDENTITY_THRESHOLD = 1  # We tolerate off-by-one errors in the SVLEN field
+    IDENTITY_THRESHOLD: int = 1  # We tolerate off-by-one errors in SVLEN
     
-    contig_name, alt_field, basepairs: str
     is_circular: bool
-    key, length, length_prime, sv_type: int
+    key: int
+    length: int
+    length_prime: int
+    sv_type: int
+    contig_name: str
+    alt_field: str
+    basepairs: str
     
     sequence.clear()
     sv_type = vcf.get_sv_type(record)
@@ -553,7 +467,7 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
         contig_name = record.contig.lower()
         is_circular = utils.is_mitochondrion(contig_name)
         set_precise_sequence(sequence,contig_name,is_circular,contig_lengths[contig_name],None)
-    elif sv_type == SV_TYPE.INS or sv_type == SV_TYPE.INS_ME or sv_type == SV_TYPE.INS_NOVEL:
+    elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]:
         length_prime = record.info.SVLEN
         alt_field = record.alts[0]
         if len(alt_field) == 0 or VCF_INSERTION_ALT in alt_field:
@@ -561,7 +475,7 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
         else:
             if alt_field[0] == record.ref:
                 basepairs = alt_field[1:]
-            else     
+            else:     
                 basepairs = alt_field
             length = len(basepairs)
             if length_prime < length-IDENTITY_THRESHOLD or length_prime > length+IDENTITY_THRESHOLD:
@@ -580,24 +494,24 @@ def serialize(output_file: str):
     All core data structures. ``pickle`` ensures that the same object is stored
     only once when it is pointed to by several other objects.
     """
-    pickler = pickle.Pickler(output_file,pickle.HIGHEST_PROTOCOL)
-    pickler.dump(events)
-    pickler.dump(reference_intervals)
-    pickler.dump(adjacencies)
-    pickler.dump(breakpoints)
-    pickler.dump(sequences)
+    with open(output_file, "wb") as f:
+        pickle.dump(events, f)
+        pickle.dump(reference_intervals, f)
+        pickle.dump(adjacencies, f)
+        pickle.dump(breakpoints, f)
+        pickle.dump(sequences, f)
 
 
 def deserialize(input_file: str):
     """
     All core data structures
     """
-    unpickler = pickle.Unpickler(input_file)
-    unpickler.load(events)
-    unpickler.load(reference_intervals)
-    unpickler.load(adjacencies)
-    unpickler.load(breakpoints)
-    unpickler.load(sequences)
+    with open(input_file, "rb") as f:
+        events = pickle.load(f)
+        reference_intervals = pickle.load(f)
+        adjacencies = pickle.load(f)
+        breakpoints = pickle.load(f)
+        sequences = pickle.load(f)
 
 
 def new_precise_beakpoint(sequence: Sequence, position: int, side: int) -> Breakpoint:
@@ -712,9 +626,10 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
     been executed.
     """
     if (breakpoints is None) or len(breakpoints) == 0 or (track is None) or len(track) == 0: return
-    i = 0; j = 0
-    n_breakpoints = len(breakpoints)
-    n_tracks = len(tracks)
+    i: int = 0
+    j: int = 0
+    n_breakpoints: int = len(breakpoints)
+    n_tracks: int = len(tracks)
     while i<n_breakpoints and j<n_tracks:
         if breakpoints[i].position_last < track[j][1]+min_intersection-1:
             i += 1
@@ -735,6 +650,10 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
 
 def merge_track_intervals(track: Track):
     """ Merges every pair of overlapping intervals in ``track``. """
+    i: int
+    j: int
+    n_intervals: int
+    
     j = 0
     n_intervals = len(track.intervals)
     for i in range(1:n_intervals):
@@ -837,7 +756,8 @@ class Adjacency:
     
     # One of the two breakpoints might be None, to represent e.g. a chromosomal
     # break that is not rejoined.
-    breakpoint1, breakpoint2: Breakpoint
+    breakpoint1: Breakpoint
+    breakpoint2: Breakpoint
     
     # One count for each individual. The count tells how many haplotypes in the
     # individual (0,1,2,...) use the adjacency at least once. Use -1 for
@@ -916,7 +836,8 @@ class Reference_Interval:
     """
     
     # Cannot be None.
-    breakpoint1, breakpoint2: Breakpoint
+    breakpoint1: Breakpoint
+    breakpoint2: Breakpoint
     copy_number: float
     
     # One count for each individual. The count tells how many haplotypes in the
@@ -1144,7 +1065,7 @@ class Breakpoint:
                 position_avg == position_first
             position_std = 0
         else:
-            if position_probability_function == PROBABILITY_FUNCTION.DELTA or position_probability_function == PROBABILITY_FUNCTION.UNIFORM:
+            if position_probability_function in [PROBABILITY_FUNCTION.DELTA, PROBABILITY_FUNCTION.UNIFORM]:
                 position_probability_function == PROBABILITY_FUNCTION.UNIFORM
                 if update_avg:
                     position_avg = (position_first+position_last)//2

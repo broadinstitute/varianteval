@@ -75,8 +75,8 @@ def get_breakend_chromosome(string: str) -> str:
     """
     :param str: the ALT field of a BND record of a VCF file.
     """
-    q = string.find(":")
-    p = string.find("[")
+    q: int = string.find(":")
+    p: int = string.find("[")
     if p == -1: p = string.find("]")
     return string[p+1:q]
 
@@ -85,8 +85,8 @@ def get_breakend_chromosome_position(string: str) -> int:
     """
     :param str: the ALT field of a BND record of a VCF file.
     """
-	q = string.find(":")
-	p = string.rfind("[")
+	q: int = string.find(":")
+	p: int = string.rfind("[")
 	if p < 0: p = string.rfind("]")
 	return int(string[q+1:p]) - 1  # VCF positions are one-based
 
@@ -138,7 +138,6 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
                 value = float(record.info.get(string))
                 quantum = int(value*SIGMA_MULTIPLE)
                 return (-quantum, quantum)
-	}
 	else:
 		if VCF_CIEND_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CIEND_STR).split(VCF_CI_SEPARATOR)))
@@ -152,7 +151,6 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
                 quantum = int(value*SIGMA_MULTIPLE)
                 return (-quantum, quantum)
 	return (0, 0)
-}
 
 
 def get_confidence_interval_std(record: VariantRecord, is_first_pos: bool) -> float:
@@ -172,7 +170,6 @@ def get_confidence_interval_std(record: VariantRecord, is_first_pos: bool) -> fl
     		if string in record.info.keys():
                 return float(record.info.get(string))
 	return 0.0
-}
 
 
 def ct2side(record: VariantRecord) -> tuple[int,int]:
