@@ -39,8 +39,20 @@ def is_chromosome(string: str) -> bool:
     if lower[0].isdigit() or \
        lower == 'x' or lower == 'chrx' or \
        lower == 'y' or lower == 'chry' or \
-       lower == 'm' or lower == 'chrm' or lower == 'mt' or lower == 'chrmt' or \
+       is_mitochondrion(string) or \
        (lower[0:3] == 'chr' and len(lower) <= 5):
        return True
-     return False
+    return False
+
+
+def is_mitochondrion(string: str) -> bool:
+    lower=string.lower()
+    return lower == 'm' or lower == 'chrm' or lower == 'mt' or lower == 'chrmt'
+
+
+def is_DNA(c: str) -> bool:
+    """
+    :param str: a string of length one.
+    """
+	return c == 'a' or c == 'A' or c == 'c' or c == 'C' or c == 'g' or c == 'G' or c == 't' or c == 'T' or c == 'n' or c == 'N'
 
