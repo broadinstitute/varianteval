@@ -9,7 +9,7 @@ Remark: phasing is not currently modeled and it is left to future work.
 import copy
 import math
 import pickle
-from typing import Callable
+from typing import Any, Callable
 import pysam
 
 import varianteval.core.constants
@@ -21,11 +21,11 @@ import varianteval.core.variant.intervals as intervals
 # All distinct objects of a given type. The same object might be pointed to by
 # several other objects. Identical insertion strings are collapsed into a single
 # object.
-events: dict[int, list[Event]]
-reference_intervals: dict[int, list[Reference_Interval]]
-adjacencies: dict[int, list[Adjacency]]
-breakpoints: dict[int, list[Breakpoint]]
-sequences: dict[int, list[Sequence]]
+events: dict[int, list[Event]] = {}
+reference_intervals: dict[int, list[Reference_Interval]] = {}
+adjacencies: dict[int, list[Adjacency]] = {}
+breakpoints: dict[int, list[Breakpoint]] = {}
+sequences: dict[int, list[Sequence]] = {}
 
 
 
@@ -326,7 +326,7 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
     tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,adjacencies))
 
 
-def retrieve_instance(query, dictionary):
+def retrieve_instance(query: Any, dictionary: Any) -> Any:
     """
     If ``dictionary`` contains an object that is equivalent to ``query``, the 
     procedure returns that object. Otherwise, it creates a shallow copy of 
@@ -336,8 +336,6 @@ def retrieve_instance(query, dictionary):
     
     :return: the object in ``dictionary`` that is equivalent to ``query``.
     """
-    i: int
-    key: int
     
     if isinstance(query,Event) or isinstance(query,Reference_Interval) or isinstance(query,Adjacency): query.canonize()
     out = None
@@ -363,11 +361,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: Break
     Remark: the procedure does not set the following fields of the breakpoint,
     which are left to the caller to complete: ``sequence, side, genotype``.
     """
-    SIGMA_MULTIPLE: int = 3  # Arbitrary
-    
-    length: int
-    position: int
-    interval: tuple[int, int]
+    SIGMA_MULTIPLE = 3  # Arbitrary
     
     breakpoint.clear()
     if is_first_pos:
@@ -450,16 +444,7 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
     :param contig_lengths: keys are assumed to contain every contig name used in
     ``record`` (lowercase).
     """
-    IDENTITY_THRESHOLD: int = 1  # We tolerate off-by-one errors in SVLEN
-    
-    is_circular: bool
-    key: int
-    length: int
-    length_prime: int
-    sv_type: int
-    contig_name: str
-    alt_field: str
-    basepairs: str
+    IDENTITY_THRESHOLD = 1  # We tolerate off-by-one errors in SVLEN
     
     sequence.clear()
     sv_type = vcf.get_sv_type(record)
@@ -626,10 +611,10 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
     been executed.
     """
     if (breakpoints is None) or len(breakpoints) == 0 or (track is None) or len(track) == 0: return
-    i: int = 0
-    j: int = 0
-    n_breakpoints: int = len(breakpoints)
-    n_tracks: int = len(tracks)
+    i = 0
+    j = 0
+    n_breakpoints = len(breakpoints)
+    n_tracks = len(tracks)
     while i<n_breakpoints and j<n_tracks:
         if breakpoints[i].position_last < track[j][1]+min_intersection-1:
             i += 1
@@ -650,10 +635,6 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
 
 def merge_track_intervals(track: Track):
     """ Merges every pair of overlapping intervals in ``track``. """
-    i: int
-    j: int
-    n_intervals: int
-    
     j = 0
     n_intervals = len(track.intervals)
     for i in range(1:n_intervals):
@@ -681,31 +662,32 @@ class Event:
     Remark: this is similar to the notion of event in the VCF specification.
     """
     
-    # One of the known SV types defined in ``constants.py``.
-    event_type: int
+    def __init__(self):
+       # One of the known SV types defined in ``constants.py``.
+       self.event_type: int = SV_TYPE.UNK
     
-    # Sequence of new adjacencies that descibes a walk in the variation graph,
-    # in arbitrary orientation. The order of this list is important. Consecutive
-    # adjacencies are assumed to be connected by intervals of the reference,
-    # taken in the orientation determined by the adjacencies. The sequence can
-    # be None.
-    #
-    # Remark: an event might contain just one new adjacency (e.g. in a deletion
-    # or in a telomere-telomere fusion).
-    #
-    # Remark: several adjacencies in the same event might use the same
-    # breakpoint.
-    adjacencies: list[Adjacency]
+       # Sequence of new adjacencies that descibes a walk in the variation
+       # graph, in arbitrary orientation. The order of this list is important.
+       # Consecutive adjacencies are assumed to be connected by intervals of
+       # the reference, taken in the orientation determined by the adjacencies.
+       # The sequence can be None.
+       #
+       # Remark: an event might contain just one new adjacency (e.g. in a
+       # deletion or in a telomere-telomere fusion).
+       #
+       # Remark: several adjacencies in the same event might use the same
+       # breakpoint.
+       self.adjacencies: list[Adjacency] = []
     
-    # List of intervals of the reference with anomalous copy number but with no
-    # evidence of new context (might be None).
-    reference_intervals: list[Reference_Interval]
+       # List of intervals of the reference with anomalous copy number but with
+       # no evidence of new context (might be None).
+       self.reference_intervals: list[Reference_Interval] = []
     
-    # One count for every individual. The count specifies how many haplotypes
-    # in the individual contain the event (0,1,2,...). Use -1 for unknown.
-    # 
-    # Remark: the reference is always assumed not to contain the event.
-    genotype: list[int]
+       # One count for every individual. The count specifies how many haplotypes
+       # in the individual contain the event (0,1,2,...). Use -1 for unknown.
+       # 
+       # Remark: the reference is always assumed not to contain the event.
+       self.genotype: list[int] = []
     
     
     def __eq__(self, other):
@@ -754,24 +736,20 @@ class Adjacency:
     is likely to happen with complex events.
     """
     
-    # One of the two breakpoints might be None, to represent e.g. a chromosomal
-    # break that is not rejoined.
-    breakpoint1: Breakpoint
-    breakpoint2: Breakpoint
-    
-    # One count for each individual. The count tells how many haplotypes in the
-    # individual (0,1,2,...) use the adjacency at least once. Use -1 for
-    # unknown.
-    #
-    # Remark: we give a genotype to an adjacency, as well, since the same
-    # adjacency might be involved in multiple, distinct events in the 
-    # haplotypes of the same individual.
-    genotype: list[int]
-    
-    
     def __init__(self, breakpoint1: Breakpoint, breakpoint2: Breakpoint):
-        self.breakpoint1 = breakpoint1
-        self.breakpoint2 = breakpoint2
+        # One of the two breakpoints might be None, to represent e.g. a
+        # chromosomal break that is not rejoined.
+        self.breakpoint1: breakpoint1
+        self.breakpoint2: breakpoint2
+    
+        # One count for each individual. The count tells how many haplotypes in
+        # the individual (0,1,2,...) use the adjacency at least once. Use -1 for
+        # unknown.
+        #
+        # Remark: we give a genotype to an adjacency, as well, since the same
+        # adjacency might be involved in multiple, distinct events in the 
+        # haplotypes of the same individual.
+        self.genotype: list[int] = []
     
     
     def __eq__(self, other):
@@ -835,25 +813,20 @@ class Reference_Interval:
     change in coverage, but it doesn't have evidence for new context.
     """
     
-    # Cannot be None.
-    breakpoint1: Breakpoint
-    breakpoint2: Breakpoint
-    copy_number: float
-    
-    # One count for each individual. The count tells how many haplotypes in the
-    # individual (0,1,2,...) contain this interval with this specific copy
-    # number. Use -1 for unknown.
-    #
-    # Remark: we give a genotype to an interval, as well, just for generality.
-    # I.e. we allow the same interval to be involved in multiple, distinct 
-    # events in the haplotypes of the same individual.
-    genotype: list[int]
-    
-    
     def __init__(self, breakpoint1: Breakpoint, breakpoint2: Breakpoint, copy_number: float):
-        self.breakpoint1 = breakpoint1
-        self.breakpoint2 = breakpoint2
-        self.copy_number = copy_number
+        # Cannot be None.
+        self.breakpoint1: Breakpoint = breakpoint1
+        self.breakpoint2: Breakpoint = breakpoint2
+        self.copy_number: float = copy_number
+    
+        # One count for each individual. The count tells how many haplotypes in
+        # the individual (0,1,2,...) contain this interval with this specific
+        # copy number. Use -1 for unknown.
+        #
+        # Remark: we give a genotype to an interval, as well, just for
+        # generality. I.e. we allow the same interval to be involved in
+        # multiple, distinct events in the haplotypes of the same individual.
+        self.genotype: list[int] = []
     
     
     def __eq__(self, other):
@@ -918,36 +891,39 @@ class Breakpoint:
     side.
     """
     
-    sequence: Sequence
+    def __init__(self): 
+        self.sequence: Sequence = None
     
-    # If we cut a sequence of length ``n`` at position ``p`` (zero-based), we
-    # need to know whether we are using ``[0..p]`` (true) or ``[p..n-1]``
-    # (false) in an adjacency. These are defined in ``constants.py``.
-    side: int
+        # If we cut a sequence of length ``n`` at position ``p`` (zero-based),
+        # we need to know whether we are using ``[0..p]`` (true) or ``[p..n-1]``
+        # (false) in an adjacency. These are defined in ``constants.py``.
+        self.side: int = BREAKPOINT_SIDE.UNKNOWN
     
-    # To model uncertainty, a breakpoint position is a probability distribution
-    # over an interval (the interval has size one iff there is no uncertainty).
-    #
-    # Remark: some callers might not return an interval, but just a probability
-    # distribution. In this case we set ``position_first = position_last = -1``.
-    #
-    # Remark: if ``sequence`` is circular, then it can happen that 
-    # ``position_first > position_last``.
-    position_first: int  # Inclusive, zero-based.
-    position_last: int  # Inclusive, zero-based.
-    position_avg: int
-    position_std: float
-    position_probability_function: int  # Defined in ``constants.py``.
+        # To model uncertainty, a breakpoint position is a probability
+        # distribution over an interval (the interval has size one iff there is
+        # no uncertainty).
+        #
+        # Remark: some callers might not return an interval, but just a
+        # probability distribution. In this case we set ``position_first =
+        # position_last = -1``.
+        #
+        # Remark: if ``sequence`` is circular, then it can happen that 
+        # ``position_first > position_last``.
+        self.position_first: int = -1  # Inclusive, zero-based.
+        self.position_last: int = -1  # Inclusive, zero-based.
+        self.position_avg: int = -1
+        self.position_std: float = 0.0
+        self.position_probability_function: int = PROBABILITY_FUNCTION.UNKNOWN  # Defined in ``constants.py``.
     
-    # One count for each individual. The count tells how many haplotypes in the
-    # individual (0,1,2,...) use an adjacency that involves the breakpoint. Use
-    # -1 for unknown.
-    #
-    # Remark: we give a genotype to a breakpoint, as well, since the same
-    # breakpoint might be involved in multiple, distinct events in the 
-    # haplotypes of the same individual.
-    genotype: list[int]
-
+        # One count for each individual. The count tells how many haplotypes in
+        # the individual (0,1,2,...) use an adjacency that involves the
+        # breakpoint. Use -1 for unknown.
+        #
+        # Remark: we give a genotype to a breakpoint, as well, since the same
+        # breakpoint might be involved in multiple, distinct events in the 
+        # haplotypes of the same individual.
+        self.genotype: list[int] = []
+        
     
     def __eq__(self, other):
         if isinstance(other,Breakpoint):
@@ -1110,18 +1086,20 @@ class Sequence:
     Only sequences with some breakpoint should be loaded in memory.
     """
     
-    # General properties
-    name: str  # Can be None if it is not a known sequence.
-    is_circular: bool
-    sequence: str  # The actual nucleotides. Can be None if not needed.
-    tracks: list[Track]
+    def __init__(self):
+        # General properties
+        self.name: str = None  # Can be None if it is not a known sequence.
+        self.is_circular: bool = False
+        self.sequence: str = None  # The actual nucleotides. Can be None if not needed.
+        self.tracks: list[Track] = []
     
-    # The length of the sequence may be uncertain (e.g. if it is an insertion).
-    length_min: int
-    length_max: int
-    length_avg: int
-    length_std: float
-    length_probability_function: int  # ID of a function
+        # The length of the sequence may be uncertain (e.g. if it is an
+        # insertion).
+        self.length_min: int = 0
+        self.length_max: int = 0
+        self.length_avg: int = 0
+        self.length_std: float = 0.0
+        self.length_probability_function: int = PROBABILITY_FUNCTION.UNKNOWN  # ID of a function
     
     
     def __eq__(self, other):
@@ -1201,10 +1179,11 @@ class Sequence:
 class Track:
     """ Interval annotation of a sequence """
     
-    name: str
+    def __init__(self):
+        self.name: str = None
     
-    # List of ``[first..last]`` coordinates, inclusive, zero-based.
-    intervals: list[intervals.GenomeInterval]
+        # List of ``[first..last]`` coordinates, inclusive, zero-based.
+        self.intervals: list[intervals.GenomeInterval] = []
     
     
     def __eq__(self, other):
