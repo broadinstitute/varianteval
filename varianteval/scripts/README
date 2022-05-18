@@ -1,1 +1,62 @@
-Utility scripts
+## Utility scripts
+### annotation_script.py
+Script to add annotation to input callset with respect to specified comparison callsets. Annotations identify
+records in the input callset that overlap with records in the comparison callsets. An example call is of the form:
+```
+python annotation_script.py --output_dir {path} --source_vcf {path} --comparison_vcfs {path1 path2 ...} --comparison_labels {label1 label2 ...}
+```
+The full set of input flags and default values are given here:
+```
+  --output_dir OUTPUT_DIR
+                        output directory for annotated files
+  --source_vcf SOURCE_VCF
+                        input vcf that will have annotations add to (a copy
+                        of) it
+  --comparison_vcfs COMPARISON_VCFS [COMPARISON_VCFS ...]
+                        list of comparison/conflict databases
+  --comparison_labels COMPARISON_LABELS [COMPARISON_LABELS ...]
+                        list of annotation labels corresponding to the input
+                        comparison vcfs
+  --conflict_overlap_thresh CONFLICT_OVERLAP_THRESH
+                        Overlap threshold to be applied when looking for
+                        conflicting calls of different type
+  --overlap_bp_margin OVERLAP_BP_MARGIN
+                        breakpoint margin to be applied in determining overlap
+                        of two intervals
+  --allowed_overlap_type {agnostic,same,different}
+                        SV type constraints on what events are considered
+                        overlapping: if 'agnostic' then collisions will be
+                        allowed across type; if 'same' then collisions will
+                        require events of the same type; if 'different' then
+                        collisions will require events of different type
+```
+
+### upset_from_annotations.py
+Script to parse an annotated VCF (with annotations indicating rows that are found in comparison callsets) and generate
+binary overlap matrices, and upsetplots from those. Assumes vcfs that are given are generated from SURVIVOR (i.e.,
+include SUPP_VEC value in the info field). An example call is of the form:
+```
+python upset_from_annotations.py --annot_vcf {path to annotated vcf} --output_dir {path} --tools {toolname1 toolname2 ...} --fig {path} --plot_type {type}
+```
+The full set of input flags and default values are given here:
+```
+  --annot_vcf ANNOT_VCF
+                        Comparison-annotated vcf file
+  --output_dir OUTPUT_DIR
+                        Output directory for plot
+  --tools TOOLS [TOOLS ...]
+                        Tool names
+  --fig FIG             Figure title
+  --plot_type PLOT_TYPE
+                        Flag to indicate whether to generate an upset or a
+                        venn diagram
+```
+
+### survivor_merge.sh
+Bash script to merge callsets given in an input panel file (first input argument) and path to SURVIVOR executable (second input argument).
+Panel files should have tool/dataset names in the first column and paths in the second column (tab separated) as in this example:
+```
+Sniffles	/athena/ihlab/scratch/vpopic/SVNet/benchmarks/sniffles/CHM/CHM1_CHM13/sniffles_final.vcf
+Huddleston	/athena/ihlab/scratch/vpopic/SVNet/benchmarks/datasets/CHM/huddleston_CHM1_CHM13_callsets/CHM1_CHM13_SVs_FINAL.annotated_formatcorrected.vcf
+PBSV	/athena/ihlab/scratch/vpopic/SVNet/benchmarks/pbsv/CHM/CHM1_CHM13/pbsv_final.vcf
+```
