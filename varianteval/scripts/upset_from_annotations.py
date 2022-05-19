@@ -19,7 +19,7 @@ from venn import venn, pseudovenn
 
 def annotated_overlap_mtx(annotated_vcf, ovlp_column=True):
     '''
-    method to generate overlap matrix from each row's SUPP_VEC value and DB value
+    method to generate overlap matrix from each row's SUPP_VEC value and OVERLAP value
     '''
     outfile_path = annotated_vcf[:-4] + '.mat.txt'
     vcf_in_file = VariantFile(annotated_vcf)
@@ -29,10 +29,10 @@ def annotated_overlap_mtx(annotated_vcf, ovlp_column=True):
         # get the space-separated support vector
         ovlp_line = ' '.join(rec.info['SUPP_VEC'])
         if ovlp_column:
-            if 'DB' not in rec.info:
+            if 'OVERLAP' not in rec.info:
                 ovlp_line += ' NONE\n'
             else:
-                ovlp_line += ' ' + rec.info['DB'] + '\n'
+                ovlp_line += ' ' + rec.info['OVERLAP'] + '\n'
         else:
             ovlp_line += '\n'
         out.write(ovlp_line)
@@ -58,16 +58,15 @@ def upset_from_annotations(overlap_df, fig_title, stacked=True):
 
 
 def high_order_venn(overlap_df, fig_title, venn_type='full'):
-    '''
+    """
     Function to create venn diagrams for 4, 5, or 6 sets -- the venn package used here taken input of sets of elements
     and finds the overlap itself, rather than the matplotlib venn package which explicitly takes each intersection size
     venn_type='full','pseudo' -- flag to generate either a full venn diagram or a pseudo venn diagram
-    *** NEEDS TO BE CALLED ON OVERLAP_DF WITHOUT EXTRA COLUMN FOR DB LABEL
-    '''
+    """
     # transformation of binary overlap matrix into dict of sets – each row of the overlap matrix represents an SV so
     # the sets for the respective tools comprise the indices at which that tool column had a 1
-    sets = {col.split()[0]: set([i for i in range(len(overlap_df[col])) if overlap_df[col].iloc[i] == 1]) \
-            for col in overlap_df.columns}
+    sets = {col.split()[0]: set([i for i in range(len(overlap_df[col])) if overlap_df[col].iloc[i] == 1]) for col in
+            overlap_df.columns}
     if venn_type == 'full':
         venn(sets, legend_loc='upper left')
     else:
@@ -78,31 +77,43 @@ def high_order_venn(overlap_df, fig_title, venn_type='full'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='VCF comparison')
     parser.add_argument('--annot_vcf', help='Comparison-annotated vcf file')
-    parser.add_argument('--output_dir', help='Output directory for plot')
+    parser.add_argument('--output_path', help='Output path for plot')
     parser.add_argument('--tools', help='Tool names', nargs='+')
-    parser.add_argument('--fig', help='Figure title')
-    parser.add_argument('--plot_type', choices=['stacked_upset', 'nonstacked_upset', 'venn'], default='stacked_upset',
+    parser.add_argument('--plot_type', choices=['stacked_upset', 'upset', 'venn', 'pseudovenn'], default='stacked_upset',
                         help='Flag to indicate whether to generate an upset or a venn diagram')
     args = parser.parse_args()
 
     col_names = args.tools
 
+    annotated_vcf = args.annot_vcf
+    annotated_overlap_mtx(annotated_vcf, ovlp_column=(args.plot_type == 'stacked_upset'))
     if args.plot_type == 'stacked_upset':
-        annotated_vcf = args.annot_vcf
-        annotated_overlap_mtx(annotated_vcf, ovlp_column=True)
         col_names.append('OVLP')
-        overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-        plot_path = args.output_dir + args.fig
-        upset_from_annotations(overlap_df, plot_path)
+    overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
+    if args.plot_type in ['upset', 'stacked_upset']:
+        upset_from_annotations(overlap_df, args.output_path, stacked=(args.plot_type == 'stacked_upset'))
     elif args.plot_type == 'venn':
-        annotated_vcf = args.annot_vcf
-        annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
-        overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-        high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_venn.png')
-        high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_pseudovenn.png', venn_type='pseudo')
-    elif args.plot_type == 'nonstacked_upset':
-        annotated_vcf = args.annot_vcf
-        annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
-        overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-        plot_path = args.output_dir + args.fig
-        upset_from_annotations(overlap_df, plot_path, stacked=False)
+        high_order_venn(overlap_df, args.output_path[:-4] + '_venn.png')
+    else:
+        high_order_venn(overlap_df, args.output_path[:-4] + '_pseudovenn.png', venn_type='pseudo')
+
+    # --------------------------------------
+    # if args.plot_type == 'stacked_upset':
+    #     annotated_vcf = args.annot_vcf
+    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=True)
+    #     col_names.append('OVLP')
+    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
+    #     plot_path = args.output_dir + args.fig
+    #     upset_from_annotations(overlap_df, plot_path)
+    # elif args.plot_type == 'venn':
+    #     annotated_vcf = args.annot_vcf
+    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
+    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
+    #     high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_venn.png')
+    #     high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_pseudovenn.png', venn_type='pseudo')
+    # elif args.plot_type == 'upset':
+    #     annotated_vcf = args.annot_vcf
+    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
+    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
+    #     plot_path = args.output_dir + args.fig
+    #     upset_from_annotations(overlap_df, plot_path, stacked=False)
