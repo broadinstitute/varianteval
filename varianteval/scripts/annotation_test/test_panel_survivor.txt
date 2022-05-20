@@ -1,0 +1,2 @@
+input1	/Users/crohlice/Documents/varianteval/varianteval/scripts/annotation_test/example_OVLP1.vcf
+input2	/Users/crohlice/Documents/varianteval/varianteval/scripts/annotation_test/example_OVLP2.vcf

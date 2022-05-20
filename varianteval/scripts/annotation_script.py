@@ -61,13 +61,13 @@ def annotate_source_vcf(source_vcf, annotated_vcf, comparison_vcfs, comparison_l
     vcf_in_file = VariantFile(source_vcf)
     header = vcf_in_file.header
     # OVERLAP may be redundant with the vcf-specific labels, but also gives a compact field for just showing
-    # the callset collisions without the extra information about the conflicting record
+    # the callset overlaps without the extra information about the conflicting record
     if 'OVERLAP' not in header.info:
         header.info.add('OVERLAP', number=1, type='String', description="Callset also containing this record (the "
-                                                                          "source of the collision)")
+                                                                        "source of the overlap)")
     if 'OVERLAPINFO' not in header.info:
         header.info.add('OVERLAPINFO', number=1, type='String',
-                        description="Annotation info about colliding comparison records")
+                        description="Annotation info about overlapping comparison records")
     vcf_annt_file = VariantFile(annotated_vcf, 'w', header=header)
 
     # dictionary hierarchy for the labels and comparison vcfs:
@@ -80,7 +80,8 @@ def annotate_source_vcf(source_vcf, annotated_vcf, comparison_vcfs, comparison_l
         for comp_label in comparison_labels:
             # comparison_dicts[comp_label][rec.chrom] an interval tree giving the typed SV intervals from the
             # comparison vcf corresponding to comp_label whose chromosome matches the current source record's
-            for comp_start, comp_stop, comp_svtype in comparison_dicts[comp_label][rec.chrom].overlap(rec.start, rec.stop):
+            for comp_start, comp_stop, comp_svtype in comparison_dicts[comp_label][rec.chrom].overlap(rec.start,
+                                                                                                      rec.stop):
                 # logic for checking SV type under the specified type constraint
                 type_constraint_met = (type_constraint == 'agnostic') or \
                                       (type_constraint == 'same' and rec.info['SVTYPE'] == comp_svtype) or \

@@ -96,24 +96,3 @@ if __name__ == '__main__':
         high_order_venn(overlap_df, args.output_path[:-4] + '_venn.png')
     else:
         high_order_venn(overlap_df, args.output_path[:-4] + '_pseudovenn.png', venn_type='pseudo')
-
-    # --------------------------------------
-    # if args.plot_type == 'stacked_upset':
-    #     annotated_vcf = args.annot_vcf
-    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=True)
-    #     col_names.append('OVLP')
-    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-    #     plot_path = args.output_dir + args.fig
-    #     upset_from_annotations(overlap_df, plot_path)
-    # elif args.plot_type == 'venn':
-    #     annotated_vcf = args.annot_vcf
-    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
-    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-    #     high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_venn.png')
-    #     high_order_venn(overlap_df, args.output_dir + args.fig[:-4] + '_pseudovenn.png', venn_type='pseudo')
-    # elif args.plot_type == 'upset':
-    #     annotated_vcf = args.annot_vcf
-    #     annotated_overlap_mtx(annotated_vcf, ovlp_column=False)
-    #     overlap_df = pd.read_csv(annotated_vcf[:-4] + '.mat.txt', sep=' ', names=col_names)
-    #     plot_path = args.output_dir + args.fig
-    #     upset_from_annotations(overlap_df, plot_path, stacked=False)
