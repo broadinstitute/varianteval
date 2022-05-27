@@ -54,5 +54,5 @@ def is_DNA(c: str) -> bool:
     """
     :param str: a string of length one.
     """
-	return c == 'a' or c == 'A' or c == 'c' or c == 'C' or c == 'g' or c == 'G' or c == 't' or c == 'T' or c == 'n' or c == 'N'
+    return c == 'a' or c == 'A' or c == 'c' or c == 'C' or c == 'g' or c == 'G' or c == 't' or c == 'T' or c == 'n' or c == 'N'
 

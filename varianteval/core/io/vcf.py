@@ -85,10 +85,10 @@ def get_breakend_chromosome_position(string: str) -> int:
     """
     :param str: the ALT field of a BND record of a VCF file.
     """
-	q: int = string.find(":")
-	p: int = string.rfind("[")
-	if p < 0: p = string.rfind("]")
-	return int(string[q+1:p]) - 1  # VCF positions are one-based
+    q: int = string.find(":")
+    p: int = string.rfind("[")
+    if p < 0: p = string.rfind("]")
+    return int(string[q+1:p]) - 1  # VCF positions are one-based
 
 
 def get_breakend_chromosome_side(string: str, position_id: bool) -> int:
@@ -99,7 +99,7 @@ def get_breakend_chromosome_side(string: str, position_id: bool) -> int:
     the ALT field).
     :return: value defined in ``constants.BREAKPOINT_SIDE``.
     """
-	if position_id:
+    if position_id:
         if string[0] == "[" or string[0] == "]":
             return BREAKPOINT_SIDE.LEFT
         else:
@@ -126,31 +126,31 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
     element: quantity to be added to ``X`` to get the last position of the 
     uncertainty interval (typically positive or zero).
     """
-	quantum: int
+    quantum: int
     value: float	
-    
-	if is_first_pos:
-		if VCF_CIPOS_STR in record.info.keys():
+
+    if is_first_pos:
+        if VCF_CIPOS_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CIPOS_STR).split(VCF_CI_SEPARATOR)))
             # The sign is already ok
         for string in VCF_STD_START:
-    		if string in record.info.keys():
+            if string in record.info.keys():
                 value = float(record.info.get(string))
                 quantum = int(value*SIGMA_MULTIPLE)
                 return (-quantum, quantum)
-	else:
-		if VCF_CIEND_STR in record.info.keys():
+    else:
+        if VCF_CIEND_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CIEND_STR).split(VCF_CI_SEPARATOR)))
             # The sign is already ok
-		if VCF_CILEN_STR in record.info.keys():
+        if VCF_CILEN_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CILEN_STR).split(VCF_CI_SEPARATOR)))
             # The sign is already ok
         for string in VCF_STD_END:
-    		if string in record.info.keys():
+            if string in record.info.keys():
                 value = float(record.info.get(string))
                 quantum = int(value*SIGMA_MULTIPLE)
                 return (-quantum, quantum)
-	return (0, 0)
+    return (0, 0)
 
 
 def get_confidence_interval_std(record: VariantRecord, is_first_pos: bool) -> float:
@@ -161,15 +161,15 @@ def get_confidence_interval_std(record: VariantRecord, is_first_pos: bool) -> fl
     :param is_first_pos: TRUE=first position in a VCF record; FALSE=last 
     position.
     """
-	if is_first_pos:
+    if is_first_pos:
         for string in VCF_STD_START:
-    		if string in record.info.keys():
+            if string in record.info.keys():
                 return float(record.info.get(string))
-	else:
+    else:
         for string in VCF_STD_END:
-    		if string in record.info.keys():
+            if string in record.info.keys():
                 return float(record.info.get(string))
-	return 0.0
+    return 0.0
 
 
 def ct2side(record: VariantRecord) -> tuple[int,int]:
@@ -181,16 +181,16 @@ def ct2side(record: VariantRecord) -> tuple[int,int]:
     out: tuple[int,int]
     
     value = record.info.get(VCF_CT_STR)
-	if value == VCF_CT_325_STR:
+    if value == VCF_CT_325_STR:
         out[0] = 1
         out[1] = 0
-	elif value == VCF_CT_523_STR:
+    elif value == VCF_CT_523_STR:
         out[0] = 0
         out[1] = 1
-	elif value == VCF_CT_525_STR:
+    elif value == VCF_CT_525_STR:
         out[0] = 0
         out[1] = 0
-	elif value == VCF_CT_323_STR:
+    elif value == VCF_CT_323_STR:
         out[0] = 1
         out[1] = 1
     return out
