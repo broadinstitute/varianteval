@@ -28,13 +28,6 @@ def overlapping_intervals(intrvl_A, intrvl_B, overlap_threshold=0.5, bp_margin=5
 
 
 def build_callset_dict(callset_vcf):
-    # record_dict = defaultdict(list)
-    # callset = VariantFile(callset_vcf)
-    # for rec in callset.fetch():
-    #     record_dict[rec.chrom].append(
-    #         ((rec.start, rec.stop), rec.info['SVTYPE']))
-    # return record_dict
-    # ---- intervaltree implementation ----
     record_dict = defaultdict(IntervalTree)
     callset = VariantFile(callset_vcf)
     for rec in callset.fetch():

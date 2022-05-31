@@ -97,3 +97,17 @@ sh survivor_merge.sh annotation_test/test_panel_survivor.txt {path to SURVIVOR e
 This command will generate a `merged.vcf` file containing the records representing the union of the records in the input vcfs
 specified in `test_panel_survivor.txt`, and it will also generate the following upsetplot:
 ![](annotation_test/upset_survivor.png)
+
+### build_igv_batch_script.py
+Procedure to generate an IGV batch script that can be used for automated screenshotting of different loci. There are three
+different modes in which this script can be run which can be specified using the `mode` input field:
+- `non_survivor`: input VCF doesn't include SUPP_VEC field and all records will be added to the batch script
+- `survivor_single`: input VCF includes SUPP_VEC field and only the records with `SUPP_VEC==args.trg_supp_vec` will be added 
+to the batch script - in this mode specifying a target support vector is required
+- `survivor_multiple`: input VCF includes SUPP_VEC field and the screenshots from the records with the different SUPP_VEC 
+values will be placed in directories named with the corresponding SUPP_VEC binary string
+A call to the script may be of the following form:
+```
+python build_igv_batch_script.py --input_vcf {path} --bam_path {path} --output_dir {path} --mode {non_survivor, survivor_single, survivor_multiple}
+```
+Information about running a batch script in IGV can be found in the IGV documentation: https://software.broadinstitute.org/software/igv/batch
