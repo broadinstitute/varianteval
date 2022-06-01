@@ -1,0 +1,2 @@
+OVLP1   annotation_test/survivor_example_OVLP1.vcf
+OVLP2   annotation_test/survivor_example_OVLP2.vcf
