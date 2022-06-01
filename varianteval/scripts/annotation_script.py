@@ -16,7 +16,7 @@ def overlapping_intervals(intrvl_A, intrvl_B, overlap_threshold=0.5, bp_margin=5
     '''
     Helper method to determine whether two records' start-end
     intervals overlap within a given breakpoint margin, and whether
-    the intervals' overlap is >=0.5*(svlen) for interval A and B
+    the intervals' overlap is >=(overlap_threshold)*(svlen) for interval A and B
     '''
     bp_check = (np.abs(intrvl_A[0] - intrvl_B[0]) < bp_margin \
                 and np.abs(intrvl_A[1] - intrvl_B[1]) < bp_margin)
