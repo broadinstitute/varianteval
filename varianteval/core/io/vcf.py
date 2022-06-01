@@ -124,7 +124,11 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
     :return: First element: quantity to be added to ``X`` to get the first 
     position of the uncertainty interval (typically negative or zero). Second 
     element: quantity to be added to ``X`` to get the last position of the 
-    uncertainty interval (typically positive or zero).
+    uncertainty interval (typically positive or zero). If ``record`` does not 
+    contain uncertainty information on one side of the interval, the
+    corresponding element of the tuple is set to zero. If ``record``does not
+    contain any uncertainty information on ``X``, both elements of the tuple are
+    set to zero and ``X`` is assumed to be certain.
     """
     quantum: int
     value: float	
