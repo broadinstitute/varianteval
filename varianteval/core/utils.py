@@ -46,13 +46,13 @@ def is_chromosome(string: str) -> bool:
 
 
 def is_mitochondrion(string: str) -> bool:
-    lower=string.lower()
+    lower = string.lower()
     return lower == 'm' or lower == 'chrm' or lower == 'mt' or lower == 'chrmt'
 
 
 def is_DNA(c: str) -> bool:
     """
-    :param str: a string of length one.
+    :param c: a string of length one.
     """
-    return c == 'a' or c == 'A' or c == 'c' or c == 'C' or c == 'g' or c == 'G' or c == 't' or c == 'T' or c == 'n' or c == 'N'
-
+    d = c.lower()
+    return d == 'a' or d == 'c' or d == 'g' or d == 't' or d == 'n'

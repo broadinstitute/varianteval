@@ -133,11 +133,6 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
         if VCF_CIPOS_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CIPOS_STR).split(VCF_CI_SEPARATOR)))
             # The sign is already ok
-        for string in VCF_STD_START:
-            if string in record.info.keys():
-                value = float(record.info.get(string))
-                quantum = int(value*SIGMA_MULTIPLE)
-                return (-quantum, quantum)
     else:
         if VCF_CIEND_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CIEND_STR).split(VCF_CI_SEPARATOR)))
@@ -145,11 +140,11 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
         if VCF_CILEN_STR in record.info.keys():
             return tuple(map(int, record.info.get(VCF_CILEN_STR).split(VCF_CI_SEPARATOR)))
             # The sign is already ok
-        for string in VCF_STD_END:
-            if string in record.info.keys():
-                value = float(record.info.get(string))
-                quantum = int(value*SIGMA_MULTIPLE)
-                return (-quantum, quantum)
+    for key in (VCF_STD_START if is_first_pos else VCF_STD_END):
+        if key in record.info.keys():
+            value = float(record.info.get(key))
+            quantum = int(value*SIGMA_MULTIPLE)
+            return (-quantum, quantum)
     return (0, 0)
 
 
@@ -161,14 +156,10 @@ def get_confidence_interval_std(record: VariantRecord, is_first_pos: bool) -> fl
     :param is_first_pos: TRUE=first position in a VCF record; FALSE=last 
     position.
     """
-    if is_first_pos:
-        for string in VCF_STD_START:
-            if string in record.info.keys():
-                return float(record.info.get(string))
-    else:
-        for string in VCF_STD_END:
-            if string in record.info.keys():
-                return float(record.info.get(string))
+
+    for key in (VCF_STD_START if is_first_pos else VCF_STD_END):
+        if key in record.info.keys():
+            return float(record.info.get(key))                
     return 0.0
 
 
@@ -178,19 +169,14 @@ def ct2side(record: VariantRecord) -> tuple[int,int]:
     
     :return: First element: left side. Second element: right side.
     """
-    out: tuple[int,int]
-    
+
     value = record.info.get(VCF_CT_STR)
     if value == VCF_CT_325_STR:
-        out[0] = 1
-        out[1] = 0
+        return (1, 0)
     elif value == VCF_CT_523_STR:
-        out[0] = 0
-        out[1] = 1
+        return (0, 1)
     elif value == VCF_CT_525_STR:
-        out[0] = 0
-        out[1] = 0
+        return (0, 0)
     elif value == VCF_CT_323_STR:
-        out[0] = 1
-        out[1] = 1
-    return out
+        return (1, 1)
+    else raise Exception("Invalid value of the CT field")

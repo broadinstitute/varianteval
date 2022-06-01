@@ -1,7 +1,7 @@
 """
 The main data structures for representing variants.
 
-.. image:: sv.png
+.. image:: ../../../docs/sv.png
 
 Remark: phasing is not currently modeled and it is left to future work.
 """
