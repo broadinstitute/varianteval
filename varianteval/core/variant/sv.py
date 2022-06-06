@@ -35,8 +35,8 @@ class Callset:
 		self.adjacencies = {}
 		self.breakpoints = {}
 		self.sequences = {}
-	
-    	
+
+
     def serialize(self, output_file: str):
         """
         All core data structures. ``pickle`` ensures that the same object is stored
