@@ -406,7 +406,7 @@ def load_event_inv(record: VariantRecord, contig_lengths: dict[str,int], callset
     retrieve_instance(tmp_event,callset.events)
 
 
-def load_event_invdup(record: VariantRecord, contig_lengths: dict[str,int], callset sv.Callset, tmp_event: sv.Event, tmp_adjacency: sv.Adjacency, tmp_breakpoint: sv.Breakpoint, tmp_sequence: sv.Sequence):
+def load_event_invdup(record: VariantRecord, contig_lengths: dict[str,int], callset: sv.Callset, tmp_event: sv.Event, tmp_adjacency: sv.Adjacency, tmp_breakpoint: sv.Breakpoint, tmp_sequence: sv.Sequence):
     """
     Converts ``record`` into an inverted duplication event and stores it in
     dictionary ``callset.events``. An INVDUP is assumed to be a sequence 
