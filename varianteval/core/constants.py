@@ -89,9 +89,9 @@ VCF_GT_STR = "GT"
 # CIEND, and we ignore it for insertions (since representing variable-length
 # insertion strings complicates our code).
 #
-VCF_CI_SEPARATOR = ",";
-VCF_CIPOS_STR = "CIPOS";
-VCF_CIEND_STR = "CIEND";
+VCF_CI_SEPARATOR = ","
+VCF_CIPOS_STR = "CIPOS"
+VCF_CIEND_STR = "CIEND"
 VCF_STD_START = ["STD_quant_start", "STD_POS1"]
 VCF_STD_END = ["STD_quant_stop", "STD_POS2"]
-VCF_CILEN_STR = "CILEN";
+VCF_CILEN_STR = "CILEN"

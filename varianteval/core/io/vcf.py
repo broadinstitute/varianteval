@@ -1,9 +1,9 @@
 from pysam import VariantFile, VariantRecord
 from typing import Any, Callable
 import copy
+import math
 
 from varianteval.core.constants import *
-import varianteval.core.vcf as corevcf
 import varianteval.core.utils as utils
 import varianteval.core.variant.sv as sv
 
@@ -35,7 +35,7 @@ def record2sv(record):
     sv_type = get_sv_type(record)
     sv_len = get_sv_len(record)
     # TODO: construct the internal representation
-    return SV(sv_type)
+    #return SV(sv_type)
 
 
 def filter_record(record, filter_funcs=None):
@@ -54,16 +54,16 @@ def vcf_iter(vcf_fname, filter_funcs=None):
     # consolidate multi-line calls
 
 
-def vcf2callset(vcf_fname, filter_funcs=None):
-    """Loads a VCF into an SV callset"""
-    vcf_file = VariantFile(vcf_fname)
-    callset = SVCallset()
-    for rec in vcf_file.fetch():
-        if not filter_record(rec, filter_funcs):
-            # TODO: handle multi-line events
-            callset.add(record2sv(rec))
-    # TODO: consolidate multi-line calls
-    return callset
+# def vcf2callset(vcf_fname, filter_funcs=None):
+#     """Loads a VCF into an SV callset"""
+#     vcf_file = VariantFile(vcf_fname)
+#     callset = SVCallset()
+#     for rec in vcf_file.fetch():
+#         if not filter_record(rec, filter_funcs):
+#             # TODO: handle multi-line events
+#             callset.add(record2sv(rec))
+#     # TODO: consolidate multi-line calls
+#     return callset
 
 
 def svs2vcf(vcf_fname, sv_callset):
@@ -77,7 +77,7 @@ def preprocess_vcf(vcf_fname):
 
 def get_breakend_chromosome(string: str) -> str:
     """
-    :param str: the ALT field of a BND record of a VCF file.
+    :param string: the ALT field of a BND record of a VCF file.
     """
     q: int = string.find(":")
     p: int = string.find("[")
@@ -87,7 +87,7 @@ def get_breakend_chromosome(string: str) -> str:
 
 def get_breakend_chromosome_position(string: str) -> int:
     """
-    :param str: the ALT field of a BND record of a VCF file.
+    :param string: the ALT field of a BND record of a VCF file.
     """
     q: int = string.find(":")
     p: int = string.rfind("[")
@@ -151,7 +151,7 @@ def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_mul
     for key in (VCF_STD_START if is_first_pos else VCF_STD_END):
         if key in record.info.keys():
             value = float(record.info.get(key))
-            quantum = int(value*SIGMA_MULTIPLE)
+            quantum = int(value*sigma_multiple)
             return (-quantum, quantum)
     return (0, 0)
 
@@ -215,13 +215,13 @@ def load_vcf(path: str, record_filter: Callable[[VariantRecord],bool], contig_le
     """
     tmp_sequence = sv.Sequence()
     tmp_breakpoint = sv.Breakpoint()
-    tmp_adjacency = sv.Adjacency()
-    tmp_interval = sv.Reference_Interval()
+    tmp_adjacency = sv.Adjacency(None, None)
+    tmp_interval = sv.Reference_Interval(None, None, 0)
     tmp_event = sv.Event()
     vcf_file = VariantFile(path,'r')
     for record in vcf_file.fetch():
         if not record_filter(record): continue
-        sv_type = corevcf.get_sv_type(record)
+        sv_type = get_sv_type(record)
         if sv_type in [SV_TYPE.DEL, SV_TYPE.DEL_ME]: 
             load_event_del(record,contig_lengths,callset,tmp_event,tmp_adjacency,tmp_breakpoint,tmp_sequence)
         elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]: 
@@ -268,7 +268,7 @@ def load_event_del(record: VariantRecord, contig_lengths: dict[str,int], callset
     tmp_event.clear()
     tmp_event.event_type = SV_TYPE.DEL
     
-    load_sequence(record,True,contig_lengths,callset,tmp_sequence)
+    load_sequence(record,True,contig_lengths,tmp_sequence)
     sequence = retrieve_instance(tmp_sequence,callset.sequences)
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence
@@ -368,7 +368,7 @@ def load_event_cnv(record: VariantRecord, contig_lengths: dict[str,int], callset
     tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
     tmp_breakpoint.copy_number = 0.0
     tmp_interval.breakpoint2 = retrieve_instance(tmp_breakpoint,callset.breakpoints)
-    tmp_event.reference_intervals.append(retrieve_instance(tmp_interval,callset.intervals))
+    tmp_event.reference_intervals.append(retrieve_instance(tmp_interval,callset.reference_intervals))
     retrieve_instance(tmp_event,callset.events)
 
 
@@ -464,14 +464,14 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
     load_breakpoint(record,True,tmp_breakpoint)
     tmp_breakpoint.sequence = sequence1
     if is_tra:
-        tmp_tuple = corevcf.ct2side(record)
+        tmp_tuple = ct2side(record)
         if tmp_tuple[0] == 1:
             tmp_breakpoint.side = BREAKPOINT_SIDE.RIGHT
         else:
             tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
     else:
         alt_field = record.alts[0]
-        tmp_breakpoint.side = corevcf.get_breakend_chromosome_side(alt_field,True)
+        tmp_breakpoint.side = get_breakend_chromosome_side(alt_field,True)
     tmp_adjacency.breakpoint1 = retrieve_instance(tmp_breakpoint,callset.breakpoints)
     load_sequence(record,False,contig_lengths,tmp_sequence)    
     sequence2 = retrieve_instance(tmp_sequence,callset.sequences)
@@ -484,7 +484,7 @@ def load_event_bnd(record: VariantRecord, is_tra: bool, contig_lengths: dict[str
             tmp_breakpoint.side = BREAKPOINT_SIDE.LEFT
     else:
         alt_field = record.alts[0]
-        tmp_breakpoint.side = corevcf.get_breakend_chromosome_side(alt_field,False)
+        tmp_breakpoint.side = get_breakend_chromosome_side(alt_field,False)
     tmp_adjacency.breakpoint2 = retrieve_instance(tmp_breakpoint,callset.breakpoints)
     tmp_event.adjacencies.append(retrieve_instance(tmp_adjacency,callset.adjacencies))
 
@@ -512,7 +512,7 @@ def retrieve_instance(query: Any, dictionary: Any) -> Any:
             dictionary[key].append(out)
     else:
         out = copy.copy(query)
-        events[key] = [out]
+        dictionary[key] = [out]
     return out
 
 
@@ -531,10 +531,10 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
         # Remark: VCF's pos is one-based, but it actually refers to the position
         # before the variant.
         breakpoint.position_avg = int(record.pos)
-        interval = corevcf.get_confidence_interval(record,True,SIGMA_MULTIPLE)
+        interval = get_confidence_interval(record,True,SIGMA_MULTIPLE)
         breakpoint.position_first = breakpoint.position_avg + interval[0]
         breakpoint.position_last = breakpoint.position_avg + interval[1]
-        breakpoint.position_std = corevcf.get_confidence_interval_std(record,True)
+        breakpoint.position_std = get_confidence_interval_std(record,True)
         if breakpoint.position_std != 0.0:
             breakpoint.position_probability_function = PROBABILITY_FUNCTION.GAUSSIAN
         elif breakpoint.position_first == breakpoint.position_last:
@@ -542,7 +542,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
         else:
             breakpoint.position_probability_function = PROBABILITY_FUNCTION.UNIFORM
     else:
-        sv_type = corevcf.get_sv_type(record)
+        sv_type = get_sv_type(record)
         # Remark: VCF's pos is one-based, but it actually refers to the position
         # before the variant.
         position = int(record.pos)
@@ -550,10 +550,10 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
             length = int(record.info.get(VCF_SVLEN_STR))
             if length < 0: length = -length
             breakpoint.position_avg = position + length - 1
-            interval = corevcf.get_confidence_interval(record,False,SIGMA_MULTIPLE)
+            interval = get_confidence_interval(record,False,SIGMA_MULTIPLE)
             breakpoint.position_first = breakpoint.position_avg + interval[0]
             breakpoint.position_last = breakpoint.position_avg + interval[1]
-            breakpoint.position_std = corevcf.get_confidence_interval_std(record,False)
+            breakpoint.position_std = get_confidence_interval_std(record,False)
             if breakpoint.position_std != 0.0:
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.GAUSSIAN
             elif breakpoint.position_first == breakpoint.position_last:
@@ -562,10 +562,10 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.UNIFORM
         elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]:
             breakpoint.position_avg = int(record.pos) + 1
-            interval = corevcf.get_confidence_interval(record,True,SIGMA_MULTIPLE)
+            interval = get_confidence_interval(record,True,SIGMA_MULTIPLE)
             breakpoint.position_first = breakpoint.position_avg + interval[0]
             breakpoint.position_last = breakpoint.position_avg + interval[1]
-            breakpoint.position_std = corevcf.get_confidence_interval_std(record,True)
+            breakpoint.position_std = get_confidence_interval_std(record,True)
             if breakpoint.position_std != 0.0:
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.GAUSSIAN
             elif breakpoint.position_first == breakpoint.position_last:
@@ -575,10 +575,10 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
         elif sv_type in [SV_TYPE.DUP, SV_TYPE.DUP_TANDEM, SV_TYPE.INV, SV_TYPE.CNV, SV_TYPE.INV_DUP, SV_TYPE.DEL_INV]:
             # Remark: VCF's end position is one-based.
             breakpoint.position_avg = int(record.info.get(VCF_END_STR)) - 1
-            interval = corevcf.get_confidence_interval(record,False,SIGMA_MULTIPLE)
+            interval = get_confidence_interval(record,False,SIGMA_MULTIPLE)
             breakpoint.position_first = breakpoint.position_avg + interval[0]
             breakpoint.position_last = breakpoint.position_avg + interval[1]
-            breakpoint.position_std = corevcf.get_confidence_interval_std(record,False)
+            breakpoint.position_std = get_confidence_interval_std(record,False)
             if breakpoint.position_std != 0.0:
                 breakpoint.position_probability_function = PROBABILITY_FUNCTION.GAUSSIAN
             elif breakpoint.position_first == breakpoint.position_last:
@@ -589,7 +589,7 @@ def load_breakpoint(record: VariantRecord, is_first_pos: bool, breakpoint: sv.Br
             # Setting the other breakpoint to precise for now. Later it should
             # be merged with the description of the same breakpoint in the
             # symmetrical VCF record.
-            position = corevcf.get_breakend_chromosome_position(record.alts[0])
+            position = get_breakend_chromosome_position(record.alts[0])
             set_precise_beakpoint(breakpoint,None,position,-1)
         elif sv_type == SV_TYPE.TRA:
             # Setting the other breakpoint to precise. This is arbitrary.
@@ -610,16 +610,17 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
     IDENTITY_THRESHOLD = 1  # We tolerate off-by-one errors in SVLEN
     
     sequence.clear()
-    sv_type = corevcf.get_sv_type(record)
+    sv_type = get_sv_type(record)
     if is_first_sequence:
         contig_name = record.contig.lower()
         is_circular = utils.is_mitochondrion(contig_name)
         set_precise_sequence(sequence,contig_name,is_circular,contig_lengths[contig_name],None)
     elif sv_type in [SV_TYPE.INS, SV_TYPE.INS_ME, SV_TYPE.INS_NOVEL]:
-        length_prime = record.info.SVLEN
+        length_prime = record.info[VCF_SVLEN_STR]
         alt_field = record.alts[0]
         if len(alt_field) == 0 or VCF_INSERTION_ALT in alt_field:
             basepairs = "n" * length_prime
+            length = length_prime
         else:
             if alt_field[0] == record.ref:
                 basepairs = alt_field[1:]
@@ -632,7 +633,7 @@ def load_sequence(record: VariantRecord, is_first_sequence: bool, contig_lengths
         set_precise_sequence(sequence,VCF_INSERTION_STRING_NAME,False,length,basepairs)
     elif sv_type == SV_TYPE.BND:
         alt_field = record.alts[0]
-        contig_name = corevcf.get_breakend_chromosome(alt_field)
+        contig_name = get_breakend_chromosome(alt_field)
         is_circular = utils.is_mitochondrion(contig_name)
         set_precise_sequence(sequence,contig_name,False,contig_lengths[contig_name],None)
 
@@ -668,7 +669,7 @@ def set_uniform_breakpoint(breakpoint: sv.Breakpoint, sequence: sv.Sequence, pos
     breakpoint.side = side
     breakpoint.position_first = position_first
     breakpoint.position_last = position_last
-    breakpoint.position_avg = (position_last+position_first)//2;
+    breakpoint.position_avg = (position_last+position_first)//2
     breakpoint.position_std = math.sqrt(float((position_last-position_first+1)**2)/12)
     breakpoint.position_probability_function = PROBABILITY_FUNCTION.UNIFORM
 
@@ -677,7 +678,7 @@ def new_precise_sequence(name: str, is_circular: bool, length: int, characters: 
     """
     Builds a sequence with no length uncertainty.
     
-    :param sequence: can be None.
+    :param characters: can be None.
     """
     
     out = sv.Sequence()
@@ -700,7 +701,7 @@ def new_uniform_sequence(name: str, is_circular: bool, length_min: int, length_m
     """
     Builds a sequence with uniform length uncertainty.
     
-    :param sequence: can be None.
+    :param characters: can be None.
     """
     
     out = sv.Sequence()
@@ -714,6 +715,6 @@ def set_uniform_sequence(out: sv.Sequence, name: str, is_circular: bool, length_
     out.sequence = characters
     out.length_first = length_min
     out.length_max = length_max
-    out.length_avg = (length_max+length_min)//2;
+    out.length_avg = (length_max+length_min)//2
     out.length_std = math.sqrt(float((length_max-length_min+1)**2)/12)
     out.length_probability_function = PROBABILITY_FUNCTION.UNIFORM
