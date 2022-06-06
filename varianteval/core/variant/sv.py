@@ -683,7 +683,7 @@ class Callset:
 
 # ---------------------- SIMPLIFICATION PROCEDURES -----------------------
 
-def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, min_intersection: int):
+def relax_breakpoints_with_track(breakpoints, track: Track, min_intersection: int):
     """
     If the uncertainty interval ``A`` of a breakpoint overlaps with an
     interval ``B`` in ``track`` by ``>=min_intersection`` bps, then ``A`` is
