@@ -15,26 +15,26 @@ import varianteval.core.variant.intervals as intervals
 
 
 class Callset:
-	"""
-	Collects all the distinct objects of a given type. The same object might be
-	pointed to by several other objects. Identical insertion strings are
-	collapsed into a single object.
-	"""
-	
-	def __init__(self):
-		self.events: dict[int, list[Event]] = {}
-		self.reference_intervals: dict[int, list[Reference_Interval]] = {}
-		self.adjacencies: dict[int, list[Adjacency]] = {}
-		self.breakpoints: dict[int, list[Breakpoint]] = {}
-		self.sequences: dict[int, list[Sequence]] = {}
-	
+    """
+    Collects all the distinct objects of a given type. The same object might be
+    pointed to by several other objects. Identical insertion strings are
+    collapsed into a single object.
+    """
     
-	def clear(self):
-		self.events = {}
-		self.reference_intervals = {}
-		self.adjacencies = {}
-		self.breakpoints = {}
-		self.sequences = {}
+    def __init__(self):
+        self.events: dict[int, list[Event]] = {}
+        self.reference_intervals: dict[int, list[Reference_Interval]] = {}
+        self.adjacencies: dict[int, list[Adjacency]] = {}
+        self.breakpoints: dict[int, list[Breakpoint]] = {}
+        self.sequences: dict[int, list[Sequence]] = {}
+
+
+    def clear(self):
+        self.events = {}
+        self.reference_intervals = {}
+        self.adjacencies = {}
+        self.breakpoints = {}
+        self.sequences = {}
 
 
     def serialize(self, output_file: str):

@@ -1,4 +1,4 @@
-from enum import Enum, unique
+from enum import Enum, unique, auto
 
 
 # IO constants
