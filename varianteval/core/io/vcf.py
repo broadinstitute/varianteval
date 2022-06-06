@@ -187,7 +187,8 @@ def ct2side(record: VariantRecord) -> tuple[int,int]:
         return (0, 0)
     elif value == VCF_CT_323_STR:
         return (1, 1)
-    else raise Exception("Invalid value of the CT field")
+    else:
+        raise Exception("Invalid value of the CT field")
 
 
 
