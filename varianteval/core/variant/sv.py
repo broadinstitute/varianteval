@@ -687,7 +687,7 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
     """
     If the uncertainty interval ``A`` of a breakpoint overlaps with an
     interval ``B`` in ``track`` by ``>=min_intersection`` bps, then ``A`` is
-    reset to ``A \union B``.
+    reset to ``A union B``.
 
     Remark: the procedure assumes ``breakpoints`` to be sorted by
     ``position_first``.
@@ -695,7 +695,7 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
     :param track: procedure ``merge_track_intervals()`` is assumed to have
     already been executed.
     """
-    
+
     if (breakpoints is None) or (len(breakpoints) == 0) or (track is None) or (len(track.intervals) == 0): return
     i = 0
     j = 0
