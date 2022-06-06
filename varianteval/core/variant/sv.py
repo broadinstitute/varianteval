@@ -695,6 +695,7 @@ def relax_breakpoints_with_track(breakpoints: list[Breakpoint], track: Track, mi
     :param track: procedure ``merge_track_intervals()`` is assumed to have
     already been executed.
     """
+    
     if (breakpoints is None) or (len(breakpoints) == 0) or (track is None) or (len(track.intervals) == 0): return
     i = 0
     j = 0
