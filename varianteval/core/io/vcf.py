@@ -54,16 +54,17 @@ def vcf_iter(vcf_fname, filter_funcs=None):
     # consolidate multi-line calls
 
 
-# def vcf2callset(vcf_fname, filter_funcs=None):
-#     """Loads a VCF into an SV callset"""
-#     vcf_file = VariantFile(vcf_fname)
-#     callset = SVCallset()
-#     for rec in vcf_file.fetch():
-#         if not filter_record(rec, filter_funcs):
-#             # TODO: handle multi-line events
-#             callset.add(record2sv(rec))
-#     # TODO: consolidate multi-line calls
-#     return callset
+def vcf2callset(vcf_fname, filter_funcs=None):
+    """Loads a VCF into an SV callset"""
+    # vcf_file = VariantFile(vcf_fname)
+    # callset = SVCallset()
+    # for rec in vcf_file.fetch():
+    #     if not filter_record(rec, filter_funcs):
+    #         # TODO: handle multi-line events
+    #         callset.add(record2sv(rec))
+    # # TODO: consolidate multi-line calls
+    # return callset
+    return None
 
 
 def svs2vcf(vcf_fname, sv_callset):
