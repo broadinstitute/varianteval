@@ -118,7 +118,7 @@ def get_breakend_chromosome_side(string: str, position_id: bool) -> int:
             return BREAKPOINT_SIDE.RIGHT
 
 
-def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_multiple: int):
+def get_confidence_interval(record: VariantRecord, is_first_pos: bool, sigma_multiple: int) -> tuple[int, ...]:
     """
     Returns the range of uncertainty around a position ``X`` (implicit from the 
     context).
