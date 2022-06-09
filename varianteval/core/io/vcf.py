@@ -66,7 +66,7 @@ def vcf2callset(vcf_fname, filter_funcs=None):
     #         callset.add(record2sv(rec))
     # # TODO: consolidate multi-line calls
     # return callset
-    return None
+    return [None] * 644
 
 
 def svs2vcf(vcf_fname, sv_callset):
