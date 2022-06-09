@@ -36,6 +36,7 @@ def record2sv(record):
     sv_len = get_sv_len(record)
     # TODO: construct the internal representation
     #return SV(sv_type)
+    return None
 
 
 def filter_record(record, filter_funcs=None):
