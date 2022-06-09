@@ -36,15 +36,14 @@ def record2sv(record):
     # sv_len = get_sv_len(record)
     # # TODO: construct the internal representation
     # return SV(sv_type)
-    # return None
-    pass
+    return None
 
 
 def filter_record(record, filter_funcs=None):
     """Applies a set of filters to the record"""
     # if filter_funcs is None:
     #     filter_funcs = []
-    pass
+    return True
 
 
 def vcf_iter(vcf_fname, filter_funcs=None):
@@ -54,7 +53,7 @@ def vcf_iter(vcf_fname, filter_funcs=None):
     #         # TODO: handle multi-line events
     #         yield record2sv(rec)
     # consolidate multi-line calls
-    pass
+    return None
 
 
 def vcf2callset(vcf_fname, filter_funcs=None):
@@ -67,8 +66,7 @@ def vcf2callset(vcf_fname, filter_funcs=None):
     #         callset.add(record2sv(rec))
     # # TODO: consolidate multi-line calls
     # return callset
-    #return None
-    pass
+    return None
 
 
 def svs2vcf(vcf_fname, sv_callset):
