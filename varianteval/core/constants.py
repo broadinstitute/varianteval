@@ -1,4 +1,4 @@
-from enum import Enum, unique, auto
+from enum import Enum
 
 
 # IO constants
@@ -7,14 +7,7 @@ BED_TYPE = Enum("BED_TYPE", "BED BEDPE")
 
 
 # SV-related constants
-@unique
-class GT(Enum):
-    HOM_REF = auto()
-    HET = auto()
-    HOM_ALT = auto()
-    UNK = auto()
-
-
+GT = Enum("GT", "HOM_REF HET HOM_ALT UNK")
 SV_TYPE = Enum("SV_TYPE", "DEL DEL_ME DEL_INV INS INS_ME INS_NOVEL DUP DUP_TANDEM DUP_INT INV INV_DUP CNV BND TRA TRA_BALANCED TRA_UNBALANCED CHROMOTHRIPSIS CHROMOPLEXY BFB DOUBLEMINUTE CPX UNK")
 SV_TYPE_ENCODING = { "DEL": SV_TYPE.DEL,
                      "DEL:ME": SV_TYPE.DEL_ME,
@@ -82,12 +75,10 @@ VCF_GT_STR = "GT"
 
 # Confidence intervals of positions.
 #
-# Remark: some callers report a standard deviation instead of a confidence
-# interval. Sniffles reports additional interval information in its BEDPE
-# output. Some callers use CILEN to express a "confidence interval around
-# inserted/deleted material between breakends": we interpret CILEN exactly like
-# CIEND, and we ignore it for insertions (since representing variable-length
-# insertion strings complicates our code).
+# Remark: some callers report a standard deviation instead of a confidence interval. Sniffles reports additional
+# interval information in its BEDPE output. Some callers use CILEN to express a "confidence interval around
+# inserted/deleted material between breakends": we interpret CILEN exactly like CIEND, and we ignore it for insertions
+# (since representing variable-length insertion strings complicates our code).
 #
 VCF_CI_SEPARATOR = ","
 VCF_CIPOS_STR = "CIPOS"

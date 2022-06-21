@@ -9,39 +9,39 @@ class NestedDict(defaultdict):
     def __call__(self):
         return NestedDict(self.default_factory)
 
-def chr2num(chr_name):
+
+def chr2num(chr_name: str) -> int:
     """
-    Returns a numerical mapping for a primary chromosome name
-    Assumes names are prefixed with "chr"
+    Returns a numerical mapping for a primary chromosome name.
+    Assumes names are prefixed with "chr".
     """
     chr_id = chr_name[3:]
-    if chr_id == 'X':
-        return 23
-    elif chr_id == 'Y':
-        return 24
-    elif chr_id == 'M' or chr_id == 'MT':
-        return 25
+    if chr_id == 'X': return 23
+    elif chr_id == 'Y': return 24
+    elif chr_id == 'M' or chr_id == 'MT': return 25
     return int(chr_id)
 
-def seq_to_num(seq):
+
+def seq_to_num(seq: str) -> int:
     base2num = {'A': bitarray('00'), 'C': bitarray('01'), 'G': bitarray('10'), 'T': bitarray('11')}
     seq_bits = bitarray()
     seq_bits.encode(base2num, seq)
     return int(seq_bits.to01(), 2)
 
-def shuffle_and_split(records, n_chunks):
+
+def shuffle_and_split(records, n_chunks: int):
     random.shuffle(records)
     return np.array_split(np.array(records), n_chunks)
 
 
 def is_chromosome(string: str) -> bool:
-    lower=string.lower()
+    lower = string.lower()
     if lower[0].isdigit() or \
        lower == 'x' or lower == 'chrx' or \
        lower == 'y' or lower == 'chry' or \
        is_mitochondrion(string) or \
        (lower[0:3] == 'chr' and len(lower) <= 5):
-       return True
+        return True
     return False
 
 
